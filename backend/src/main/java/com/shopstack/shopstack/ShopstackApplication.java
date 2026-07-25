@@ -16,7 +16,7 @@ public class ShopstackApplication {
 		SpringApplication.run(ShopstackApplication.class, args);
 	}
 
-	private static void loadEnv() {
+	public static void loadEnv() {
 		// Check for .env in current, parent, or backend sub-directory
 		Path envPath = Paths.get(".env");
 		if (!Files.exists(envPath)) {

@@ -6,7 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('user');
+      const stored = sessionStorage.getItem('user');
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -16,16 +16,16 @@ export function AuthProvider({ children }) {
 
   // On mount, refresh user from backend
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       getMe()
         .then((res) => {
           setUser(res.data);
-          localStorage.setItem('user', JSON.stringify(res.data));
+          sessionStorage.setItem('user', JSON.stringify(res.data));
         })
         .catch(() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
           setUser(null);
         })
         .finally(() => setLoading(false));
@@ -37,8 +37,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const res = await apiLogin(email, password);
     const { token, ...userInfo } = res.data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userInfo));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(userInfo));
     setUser(userInfo);
     return userInfo;
   }, []);
@@ -49,15 +49,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
   }, []);
 
   const updateUser = useCallback((newUserInfo) => {
     setUser((prev) => {
       const updated = { ...prev, ...newUserInfo };
-      localStorage.setItem('user', JSON.stringify(updated));
+      sessionStorage.setItem('user', JSON.stringify(updated));
       return updated;
     });
   }, []);

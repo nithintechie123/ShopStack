@@ -66,11 +66,13 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
   const estDeliveryObj = new Date(orderDateObj);
   estDeliveryObj.setDate(estDeliveryObj.getDate() + 4);
 
-  const formattedOrderDate = orderDateObj.toLocaleDateString('en-US', {
+  const formattedOrderDate = orderDateObj.toLocaleString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 
   const formattedEstDelivery = estDeliveryObj.toLocaleDateString('en-US', {

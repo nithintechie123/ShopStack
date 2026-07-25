@@ -520,7 +520,13 @@ export default function VendorDashboard() {
                 {vendorOrders.map((order) => {
                   const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
                   const dateStr = order.orderDate
-                    ? new Date(order.orderDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    ? new Date(order.orderDate).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                     : 'Recent';
                   const isExpanded = expandedOrderId === order.id;
 
