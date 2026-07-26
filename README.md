@@ -243,6 +243,5 @@ Here are the main API routes the frontend uses to talk to the backend:
 *   **Shaik Abdul Raheem**
 *   **Shamkumar M**
 *   **Kaja Sunand**
-*   **Komali Satya Kumari Mogili**
 *   **Veldal Venkata Rohit Kumar Reddy**
-*   **Jilla Ganesh**
+
