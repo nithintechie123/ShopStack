@@ -236,9 +236,10 @@ export default function ProductDetail() {
                         navigate('/login');
                         return;
                       }
-                      addToCart(product, quantity);
-                      setAddedFeedback(true);
-                      setTimeout(() => setAddedFeedback(false), 1500);
+                      if (addToCart(product, quantity)) {
+                        setAddedFeedback(true);
+                        setTimeout(() => setAddedFeedback(false), 1500);
+                      }
                     }}
                     className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs sm:text-sm font-bold py-3 px-6 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer text-center min-w-[160px]"
                   >

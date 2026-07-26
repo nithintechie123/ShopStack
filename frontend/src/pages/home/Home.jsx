@@ -659,9 +659,10 @@ export default function Home() {
                             navigate('/login');
                             return;
                           }
-                          addToCart(selectedProduct, modalQty);
-                          setAddedFeedback(true);
-                          setTimeout(() => setAddedFeedback(false), 1500);
+                          if (addToCart(selectedProduct, modalQty)) {
+                            setAddedFeedback(true);
+                            setTimeout(() => setAddedFeedback(false), 1500);
+                          }
                         }}
                         className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs font-bold py-3 rounded-lg shadow-md shadow-accent-primary/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer mt-4"
                       >

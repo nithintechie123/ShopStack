@@ -218,7 +218,7 @@ export default function Cart() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(product, Math.min(product.stockQuantity, item.quantity + 1))}
+                            onClick={() => updateQuantity(product, item.quantity + 1)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-tertiary text-text-primary font-bold transition-colors cursor-pointer"
                             title="Increase Quantity"
                           >
