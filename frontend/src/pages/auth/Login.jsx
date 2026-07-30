@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, ShoppingBag, AlertCircle, ShieldAlert, X } from 'lucide-react';
+import { Mail, Lock, ShoppingBag, AlertCircle, ShieldAlert, X, Eye, EyeOff } from 'lucide-react';
 import AuthCarousel from '../../components/auth/AuthCarousel';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSuspendedModalOpen, setIsSuspendedModalOpen] = useState(false);
@@ -31,9 +32,9 @@ export default function Login() {
     try {
       const user = await login(cleanEmail, form.password);
       switch (user.role) {
-        case 'ADMIN':    navigate('/admin');   break;
-        case 'VENDOR':   navigate('/vendor');  break;
-        default:         navigate('/');        break;
+        case 'ADMIN': navigate('/admin'); break;
+        case 'VENDOR': navigate('/vendor'); break;
+        default: navigate('/'); break;
       }
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Invalid email or password.';
@@ -55,7 +56,7 @@ export default function Login() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[35rem] h-[35rem] bg-accent-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-glass-border bg-glass/40 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[650px] ">
-        
+
         {/* Left Side: Info (5 cols on lg) */}
         <div className="hidden lg:block lg:col-span-5 relative overflow-hidden min-h-[680px]">
           <AuthCarousel />
@@ -109,14 +110,22 @@ export default function Login() {
                   <input
                     id="password"
                     name="password"
-                    type="password"
-                    className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 pl-11 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm py-3 pl-11 pr-10 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={handleChange}
                     required
                     autoComplete="current-password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors duration-200 focus:outline-none flex items-center justify-center p-1 rounded-md hover:bg-black/5"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 

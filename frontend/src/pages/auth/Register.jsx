@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, User, Store, ShoppingBag, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, Store, ShoppingBag, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import AuthCarousel from '../../components/auth/AuthCarousel';
 
 const INITIAL = {
@@ -14,6 +14,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(INITIAL);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function Register() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[35rem] h-[35rem] bg-accent-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-glass-border bg-glass/40 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 animate-in fade-in zoom-in-95 duration-500 min-h-[650px]">
-        
+
         {/* Left Side: Info (5 cols on lg) */}
         <div className="hidden lg:block lg:col-span-5 relative overflow-hidden min-h-[680px]">
           <AuthCarousel />
@@ -80,11 +81,10 @@ export default function Register() {
                 <button
                   key={r}
                   type="button"
-                  className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg border text-sm font-semibold transition-all duration-300 cursor-pointer ${
-                    form.role === r
+                  className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg border text-sm font-semibold transition-all duration-300 cursor-pointer ${form.role === r
                       ? 'border-accent-primary bg-accent-primary/10 text-accent-primary shadow-sm'
                       : 'border-glass-border bg-transparent text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-                  }`}
+                    }`}
                   onClick={() => setForm((p) => ({ ...p, role: r }))}
                 >
                   {r === 'CUSTOMER' ? <User size={16} /> : <Store size={16} />}
@@ -164,21 +164,29 @@ export default function Register() {
                   <input
                     id="reg-password"
                     name="password"
-                    type="password"
-                    className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 pl-11 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm py-3 pl-11 pr-10 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow"
                     placeholder="Min. 6 characters"
                     value={form.password}
                     onChange={handleChange}
                     minLength={6}
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors duration-200 focus:outline-none flex items-center justify-center p-1 rounded-md hover:bg-black/5"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
                 </div>
               </div>
 
               {form.role === 'VENDOR' && (
                 <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-5 flex flex-col gap-4 mt-1">
                   <div className="text-xs font-bold text-accent-primary uppercase tracking-widest">Store Information</div>
-                  
+
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="storeName" className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Store Name *</label>
                     <div className="relative">
