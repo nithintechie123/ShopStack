@@ -12,6 +12,11 @@ import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProfile from './pages/vendor/VendorProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProfile from './pages/admin/AdminProfile';
+import Reports from './pages/admin/Reports';
+import RevenueReport from './pages/admin/RevenueReport';
+import SalesReport from './pages/admin/SalesReport';
+import VendorPerformanceReport from './pages/admin/VendorPerformanceReport';
+import CategoryAnalyticsReport from './pages/admin/CategoryAnalyticsReport';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
@@ -56,6 +61,11 @@ export default function App() {
               <Route element={<RoleRoute role="ADMIN" />}>
                 <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
                 <Route path="/admin/profile" element={<Layout><AdminProfile /></Layout>} />
+                <Route path="/admin/reports" element={<Layout><Reports /></Layout>} />
+                <Route path="/admin/reports/revenue" element={<Layout><RevenueReport /></Layout>} />
+                <Route path="/admin/reports/sales" element={<Layout><SalesReport /></Layout>} />
+                <Route path="/admin/reports/vendor" element={<Layout><VendorPerformanceReport /></Layout>} />
+                <Route path="/admin/reports/category" element={<Layout><CategoryAnalyticsReport /></Layout>} />
               </Route>
 
               {/* Authenticated Customer Routes */}
