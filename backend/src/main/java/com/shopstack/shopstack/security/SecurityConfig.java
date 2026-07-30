@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,16 +37,37 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/products/public/**").permitAll()
-                .requestMatchers("/api/categories/public/**").permitAll()
-                .requestMatchers("/api/upload/files/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/vendor/**").hasRole("VENDOR")
-                .anyRequest().authenticated()
-            );
+                .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        .requestMatchers("/api/products/public/**").permitAll()
+
+                        .requestMatchers("/api/categories/public/**").permitAll()
+
+                        .requestMatchers("/api/upload/files/**").permitAll()
+
+                        .requestMatchers("/h2-console/**").permitAll()
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/vendor/**")
+                        .hasRole("VENDOR")
+
+                                // Admin creates warehouses
+                                .requestMatchers(HttpMethod.POST, "/api/warehouse")
+                                .hasRole("ADMIN")
+
+// Warehouse Staff performs warehouse operations
+                                .requestMatchers("/api/warehouse/**")
+                                .hasRole("WAREHOUSE_STAFF")
+
+                        .requestMatchers("/api/shipment/**")
+                        .hasRole("WAREHOUSE_STAFF")
+
+                        .anyRequest().authenticated()
+                );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

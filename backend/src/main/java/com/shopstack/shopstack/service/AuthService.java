@@ -1,5 +1,6 @@
 package com.shopstack.shopstack.service;
 
+import com.shopstack.shopstack.dto.admin.CreateWarehouseStaffRequest;
 import com.shopstack.shopstack.dto.LoginRequest;
 import com.shopstack.shopstack.dto.LoginResponse;
 import com.shopstack.shopstack.dto.RegisterRequest;
@@ -114,5 +115,25 @@ public class AuthService {
                 .role(user.getRole().name())
                 .profilePictureUrl(user.getProfilePictureUrl())
                 .build();
+    }
+
+
+    @Transactional
+    public User createWarehouseStaff(CreateWarehouseStaffRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email is already registered!");
+        }
+
+        User warehouseStaff = User.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .role(Role.WAREHOUSE_STAFF)
+                .isActive(true)
+                .build();
+
+        return userRepository.save(warehouseStaff);
     }
 }

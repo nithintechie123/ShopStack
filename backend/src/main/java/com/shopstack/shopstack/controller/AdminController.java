@@ -1,5 +1,8 @@
 package com.shopstack.shopstack.controller;
 
+
+import com.shopstack.shopstack.dto.admin.CreateWarehouseStaffRequest;
+import com.shopstack.shopstack.service.AuthService;
 import com.shopstack.shopstack.model.User;
 import com.shopstack.shopstack.model.VendorProfile;
 import com.shopstack.shopstack.model.VendorStatus;
@@ -17,9 +20,13 @@ import java.util.UUID;
 public class AdminController {
 
     private final ProfileService profileService;
+    private final AuthService authService;
 
-    public AdminController(ProfileService profileService) {
+    public AdminController(ProfileService profileService,
+                           AuthService authService) {
+
         this.profileService = profileService;
+        this.authService = authService;
     }
 
     @GetMapping("/vendors")
@@ -80,6 +87,23 @@ public class AdminController {
             return ResponseEntity.ok(profileService.toggleUserStatus(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/warehouse-staff")
+    public ResponseEntity<?> createWarehouseStaff(
+            @RequestBody CreateWarehouseStaffRequest request) {
+
+        try {
+
+            User warehouseStaff = authService.createWarehouseStaff(request);
+
+            return ResponseEntity.ok(warehouseStaff);
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }
