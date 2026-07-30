@@ -3,7 +3,9 @@ import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, t
 import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
 import { getAdminOrders, updateOrderStatus } from '../../api/orders';
 import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers } from 'lucide-react';
+import DashboardCards from '../../components/admin/DashboardCards';
 import OrderTracker from '../../components/orders/OrderTracker';
+import { Link } from 'react-router-dom';
 import InventoryManager from '../../components/inventory/InventoryManager';
 
 export default function AdminDashboard() {
@@ -82,37 +84,28 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-bg-primary text-text-primary py-10 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="flex items-center gap-3 gradient-text text-3xl font-extrabold tracking-tight">
-            <Shield size={28} className="text-accent-primary shrink-0" />
-            <span>Admin Dashboard</span>
-          </h1>
-          <p className="text-sm text-text-secondary mt-1.5">Manage vendors, products, users, and platform order tracking</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="flex items-center gap-3 gradient-text text-3xl font-extrabold tracking-tight">
+              <Shield size={28} className="text-accent-primary shrink-0" />
+              <span>Admin Dashboard</span>
+            </h1>
+            <p className="text-sm text-text-secondary mt-1.5">Manage vendors, products, users, and platform order tracking</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/admin/reports" className="inline-flex items-center gap-2 bg-accent-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:opacity-95">Reports</Link>
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          {[
-            { icon: Users,       label: 'Total Users',      value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary', tab: 'users' },
-            { icon: Store,       label: 'Total Vendors',    value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary', tab: 'vendors' },
-            { icon: Truck,       label: 'Platform Orders',  value: adminOrders.length, bg: 'bg-accent-secondary/10 text-accent-secondary', tab: 'orders' },
-            { icon: Package,     label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600', tab: 'products' },
-          ].map(({ icon: Icon, label, value, bg, tab }) => (
-            <button
-              key={label}
-              onClick={() => tab && setActiveTab(tab)}
-              className="flex items-center text-left w-full gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md hover:bg-glass/20 transition-all duration-200 cursor-pointer focus:outline-none"
-            >
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>
-                <Icon size={20} />
-              </div>
-              <div>
-                <p className="font-display text-2xl font-extrabold text-text-primary leading-none">{value}</p>
-                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">{label}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+        <DashboardCards
+          cards={[
+            { icon: Users, label: 'Total Users', value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary' },
+            { icon: Store, label: 'Total Vendors', value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
+            { icon: Truck, label: 'Platform Orders', value: adminOrders.length, bg: 'bg-accent-secondary/10 text-accent-secondary' },
+            { icon: Package, label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600' },
+          ]}
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-glass-border mb-6">
