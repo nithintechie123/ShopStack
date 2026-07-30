@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
 import { getAdminOrders, updateOrderStatus } from '../../api/orders';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers } from 'lucide-react';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3 } from 'lucide-react';
 import DashboardCards from '../../components/admin/DashboardCards';
 import OrderTracker from '../../components/orders/OrderTracker';
 import { Link } from 'react-router-dom';
@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [pendingProducts, setPendingProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [adminOrders, setAdminOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -24,14 +25,16 @@ export default function AdminDashboard() {
       getPendingProducts(),
       getCustomerCount(),
       getAllCustomers(),
-      searchProducts({})
+      searchProducts({}),
+      getAdminOrders()
     ])
-      .then(([vRes, pRes, ccRes, cRes, prodRes]) => {   
+      .then(([vRes, pRes, ccRes, cRes, prodRes, oRes]) => {   
         setCustomers(cRes.data);
         setVendors(vRes.data);
         setPendingProducts(pRes.data);
         setCustomerCount(ccRes.data);
         setAllProducts(prodRes.data || []);
+        setAdminOrders(oRes.data || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -80,7 +83,13 @@ export default function AdminDashboard() {
             <p className="text-sm text-text-secondary mt-1.5">Manage vendors, products, users, and platform order tracking</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/admin/reports" className="inline-flex items-center gap-2 bg-accent-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:opacity-95">Reports</Link>
+            <Link
+              to="/admin/reports"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white font-bold text-sm shadow-md shadow-accent-primary/10 hover:shadow-lg hover:shadow-accent-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-98 cursor-pointer"
+            >
+              <BarChart3 size={16} className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 text-white" />
+              <span>Reports</span>
+            </Link>
           </div>
         </div>
 
