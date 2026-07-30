@@ -6,6 +6,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class ShopstackApplicationTests {
 
+	static {
+		ShopstackApplication.loadEnv();
+	}
+
 	@Test
 	void contextLoads() {
 	}

@@ -15,6 +15,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     
     List<Order> findByUserIdOrderByOrderDateDesc(UUID userId);
 
-    @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE i.product.vendor.id = :vendorId ORDER BY o.orderDate DESC")
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE i.product.vendor.user.id = :vendorId ORDER BY o.orderDate DESC")
     List<Order> findByVendorId(@Param("vendorId") UUID vendorId);
 }

@@ -2,6 +2,10 @@ package com.shopstack.shopstack.service;
 
 import java.math.BigDecimal;
 
+import com.shopstack.shopstack.dto.VendorOrderItemResponse;
+import com.shopstack.shopstack.dto.VendorOrderResponse;
+import com.shopstack.shopstack.dto.VendorOrderItemResponse;
+import com.shopstack.shopstack.dto.VendorOrderResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -185,7 +189,8 @@ public class OrderService {
 
         boolean isOwner = order.getUser().getId().equals(user.getId());
         boolean isAdmin = user.getRole() == com.shopstack.shopstack.model.Role.ADMIN;
-        boolean isVendor = isVendorForOrder(order, user);
+        boolean isVendor =
+                isVendorForOrder(order, user);
 
         if (!isOwner && !isAdmin && !isVendor) {
             throw new RuntimeException("Access denied");
@@ -236,13 +241,62 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public List<Order> getOrdersForVendor(User user) {
+    public List<VendorOrderResponse> getOrdersForVendor(User user) {
 
         if (user.getRole() != com.shopstack.shopstack.model.Role.VENDOR) {
             throw new RuntimeException("Access denied");
         }
 
-        return orderRepository.findByVendorId(user.getId());
+        List<Order> orders = orderRepository.findByVendorId(user.getId());
+
+        List<VendorOrderResponse> response = new ArrayList<>();
+
+        for (Order order : orders) {
+
+            BigDecimal vendorAmount = BigDecimal.ZERO;
+            List<VendorOrderItemResponse> itemResponses = new ArrayList<>();
+
+            for (OrderItem item : order.getItems()) {
+
+                if (item.getProduct()
+                        .getVendor()
+                        .getUser()
+                        .getId()
+                        .equals(user.getId())) {
+
+                    BigDecimal total = item.getPrice()
+                            .multiply(BigDecimal.valueOf(item.getQuantity()));
+
+                    vendorAmount = vendorAmount.add(total);
+
+                    itemResponses.add(
+                            VendorOrderItemResponse.builder()
+                                    .productId(item.getProduct().getId())
+                                    .productName(item.getProduct().getName())
+                                    .quantity(item.getQuantity())
+                                    .price(item.getPrice())
+                                    .total(total)
+                                    .build()
+                    );
+                }
+            }
+
+            response.add(
+                    VendorOrderResponse.builder()
+                            .id(order.getId())
+                            .orderDate(order.getOrderDate())
+                            .customerName(
+                                    order.getUser().getFirstName() + " " + order.getUser().getLastName()
+                            )
+                            .trackingStatus(order.getTrackingStatus())
+                            .paymentStatus(order.getPaymentStatus())
+                            .vendorAmount(vendorAmount)
+                            .items(itemResponses)
+                            .build()
+            );
+        }
+
+        return response;
     }
 
     public List<Order> getAllOrders() {

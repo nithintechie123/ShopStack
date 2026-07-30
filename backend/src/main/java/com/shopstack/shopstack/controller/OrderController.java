@@ -25,6 +25,7 @@ import com.shopstack.shopstack.repository.CouponRepository;
 import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.service.OrderService;
 import com.shopstack.shopstack.service.PaymentService;
+import com.shopstack.shopstack.dto.VendorOrderResponse;
 
 @RestController
 public class OrderController {
@@ -116,7 +117,7 @@ public class OrderController {
     public ResponseEntity<?> getVendorOrders() {
         try {
             User user = getCurrentUser();
-            List<Order> orders = orderService.getOrdersForVendor(user);
+            List<VendorOrderResponse> orders = orderService.getOrdersForVendor(user);
             return ResponseEntity.ok(orders);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

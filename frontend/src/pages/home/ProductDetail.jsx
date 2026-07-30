@@ -107,7 +107,7 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-8 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-xs font-semibold text-text-secondary">
           <Link to="/" className="hover:text-accent-primary flex items-center gap-1 transition-colors">
@@ -121,7 +121,7 @@ export default function ProductDetail() {
 
         {/* Product Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-glass/10 border border-glass-border rounded-2xl p-6 sm:p-8 backdrop-blur-md">
-          
+
           {/* Left: Images */}
           <div className="flex flex-col gap-4">
             <div className="relative aspect-[4/3] rounded-xl bg-bg-tertiary border border-glass-border overflow-hidden flex items-center justify-center">
@@ -141,9 +141,8 @@ export default function ProductDetail() {
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(img.imageUrl)}
-                    className={`w-16 h-16 rounded-lg bg-bg-tertiary border overflow-hidden shrink-0 transition-all cursor-pointer ${
-                      selectedImage === img.imageUrl ? 'border-accent-primary ring-2 ring-accent-primary-glow' : 'border-glass-border opacity-70 hover:opacity-100'
-                    }`}
+                    className={`w-16 h-16 rounded-lg bg-bg-tertiary border overflow-hidden shrink-0 transition-all cursor-pointer ${selectedImage === img.imageUrl ? 'border-accent-primary ring-2 ring-accent-primary-glow' : 'border-glass-border opacity-70 hover:opacity-100'
+                      }`}
                   >
                     <img src={img.imageUrl} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
                   </button>
@@ -237,9 +236,10 @@ export default function ProductDetail() {
                         navigate('/login');
                         return;
                       }
-                      addToCart(product, quantity);
-                      setAddedFeedback(true);
-                      setTimeout(() => setAddedFeedback(false), 1500);
+                      if (addToCart(product, quantity)) {
+                        setAddedFeedback(true);
+                        setTimeout(() => setAddedFeedback(false), 1500);
+                      }
                     }}
                     className="flex-1 bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white text-xs sm:text-sm font-bold py-3 px-6 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer text-center min-w-[160px]"
                   >
@@ -254,9 +254,8 @@ export default function ProductDetail() {
                       }
                       await toggleWishlist(product);
                     }}
-                    className={`w-11 h-11 flex items-center justify-center rounded-lg border transition-all cursor-pointer ${
-                      isLiked ? 'bg-accent-primary/10 border-accent-primary/30 text-accent-primary' : 'bg-transparent border-glass-border hover:border-text-secondary text-text-primary'
-                    }`}
+                    className={`w-11 h-11 flex items-center justify-center rounded-lg border transition-all cursor-pointer ${isLiked ? 'bg-accent-primary/10 border-accent-primary/30 text-accent-primary' : 'bg-transparent border-glass-border hover:border-text-secondary text-text-primary'
+                      }`}
                     title={isLiked ? 'Remove from Wishlist' : 'Add to Wishlist'}
                   >
                     <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
@@ -304,7 +303,7 @@ export default function ProductDetail() {
                 <form onSubmit={handleReviewSubmit} className="p-5 border border-glass-border rounded-xl bg-bg-tertiary/40 flex flex-col gap-3">
                   <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">Write a Review</h4>
                   {reviewError && <p className="text-xs text-accent-danger font-semibold">{reviewError}</p>}
-                  
+
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-text-secondary font-medium">Rating:</span>
                     <div className="flex gap-1 text-accent-warning">

@@ -22,6 +22,29 @@ const TRACKING_STEPS = [
   { key: 'DELIVERED', label: 'Delivered', desc: 'Package delivered safely', Icon: CheckCircle2 }
 ];
 
+const FULFILLMENT_ACTIONS = {
+  PLACED: {
+    label: 'Accept order and start preparation',
+    nextStatus: 'PROCESSING',
+    helper: 'Confirm items, check stock, and begin picking for packing.'
+  },
+  PROCESSING: {
+    label: 'Mark as packed and ready for shipment',
+    nextStatus: 'SHIPPED',
+    helper: 'Inspect items, pack them securely, and attach the delivery label.'
+  },
+  SHIPPED: {
+    label: 'Dispatch to courier',
+    nextStatus: 'OUT_FOR_DELIVERY',
+    helper: 'Hand over the package to the delivery partner for final transit.'
+  },
+  OUT_FOR_DELIVERY: {
+    label: 'Confirm delivery complete',
+    nextStatus: 'DELIVERED',
+    helper: 'Update the status once the package reaches the customer.'
+  }
+};
+
 export default function OrderTracker({ order, onStatusUpdate, isCustomer = true, userRole = 'CUSTOMER' }) {
   const [cancelling, setCancelling] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -43,11 +66,13 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
   const estDeliveryObj = new Date(orderDateObj);
   estDeliveryObj.setDate(estDeliveryObj.getDate() + 4);
 
-  const formattedOrderDate = orderDateObj.toLocaleDateString('en-US', {
+  const formattedOrderDate = orderDateObj.toLocaleString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 
   const formattedEstDelivery = estDeliveryObj.toLocaleDateString('en-US', {
@@ -74,6 +99,11 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
   const canVendorOrAdminUpdate =
     (userRole === 'VENDOR' || userRole === 'ADMIN') && !isCancelled;
 
+  const canShowFulfillmentAction =
+    userRole !== 'CUSTOMER' &&
+    !isCancelled &&
+    FULFILLMENT_ACTIONS[currentStatus] !== undefined;
+
   const handleCancel = async () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
     setCancelling(true);
@@ -97,6 +127,25 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
     try {
       const res = await updateOrderStatus(order.id, newStatus);
       setActionSuccess(`Status updated to ${newStatus}`);
+      if (onStatusUpdate) onStatusUpdate(res.data);
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Failed to update order status.');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleFulfillmentAction = async () => {
+    const action = FULFILLMENT_ACTIONS[currentStatus];
+    if (!action) return;
+
+    setUpdating(true);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const res = await updateOrderStatus(order.id, action.nextStatus);
+      setActionSuccess(`Order moved to ${action.nextStatus.replace(/_/g, ' ')}.`);
       if (onStatusUpdate) onStatusUpdate(res.data);
     } catch (err) {
       setActionError(err.response?.data?.error || 'Failed to update order status.');
@@ -146,6 +195,24 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
             )}
           </p>
         </div>
+        {canShowFulfillmentAction && (
+          <div className="mt-4 p-4 rounded-2xl border border-accent-primary/20 bg-accent-primary/5 text-text-primary">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-accent-primary">Fulfillment Step</p>
+                <p className="mt-2 text-sm font-bold">{FULFILLMENT_ACTIONS[currentStatus].label}</p>
+                <p className="text-[12px] text-text-secondary mt-1">{FULFILLMENT_ACTIONS[currentStatus].helper}</p>
+              </div>
+              <button
+                onClick={handleFulfillmentAction}
+                disabled={updating}
+                className="inline-flex items-center justify-center rounded-xl bg-accent-primary text-white text-sm font-bold px-4 py-2 transition-all duration-200 hover:bg-accent-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updating ? 'Updating…' : FULFILLMENT_ACTIONS[currentStatus].label}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-1.5 text-text-secondary bg-bg-tertiary/40 border border-glass-border/40 px-3 py-1.5 rounded-lg">
@@ -274,24 +341,7 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
               </button>
             )}
 
-            {canVendorOrAdminUpdate && (
-              <div className="flex items-center gap-2">
-                <select
-                  value={currentStatus}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  disabled={updating}
-                  className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-semibold px-3 py-2 outline-none focus:border-accent-primary cursor-pointer disabled:opacity-50"
-                >
-                  <option value="PLACED">Placed</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="SHIPPED">Shipped</option>
-                  <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-                {updating && <span className="text-xs text-text-muted">Updating…</span>}
-              </div>
-            )}
+           
           </div>
         </div>
       )}

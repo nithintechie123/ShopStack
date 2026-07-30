@@ -21,30 +21,44 @@ export default function Cart() {
   const navigate = useNavigate();
 
   const [selectedItems, setSelectedItems] = useState(
-  cartItems.map(item => item.product.id)
-);
+    cartItems.map(item => item.product.id)
+  );
+
   const selectedCartItems = cartItems.filter(item =>
     selectedItems.includes(item.product.id)
-);
+  );
 
-const selectedSubtotal = selectedCartItems.reduce(
+  // Checks if all items in the cart are selected
+  const isAllSelected = cartItems.length > 0 && cartItems.every(item => selectedItems.includes(item.product.id));
+
+  // Toggles selecting/deselecting all items in the cart
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cartItems.map(item => item.product.id));
+    }
+  };
+
+
+  const selectedSubtotal = selectedCartItems.reduce(
     (total, item) => total + parseFloat(item.product.price) * item.quantity,
     0
-);
+  );
   const shippingFee =
-  selectedSubtotal > 1000 || selectedSubtotal === 0 ? 0 : 99;
+    selectedSubtotal > 1000 || selectedSubtotal === 0 ? 0 : 99;
 
-const grandTotal = selectedSubtotal + shippingFee;
+  const grandTotal = selectedSubtotal + shippingFee;
 
   const handleCheckoutClick = () => {
     if (!user) {
       navigate('/login');
     } else {
       navigate('/checkout', {
-    state: {
-        selectedItems
-    }
-});
+        state: {
+          selectedItems
+        }
+      });
     }
   };
 
@@ -72,15 +86,15 @@ const grandTotal = selectedSubtotal + shippingFee;
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-10 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Page Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="gradient-text text-3xl font-extrabold tracking-tight flex items-center gap-3">
               <ShoppingCart size={28} className="text-accent-primary shrink-0" />
               <span>Shopping Cart</span>
-              <span className="text-xs font-bold text-text-muted bg-bg-tertiary px-3 py-1 rounded-full border border-glass-border">
-                {cartCount} {cartCount === 1 ? 'Item' : 'Items'}
+              <span className="text-xs font-bold text-accent-primary bg-accent-primary/10 px-3 py-1 rounded-full border border-accent-primary/20">
+                {cartCount} {cartCount === 1 ? 'item' : 'items'}
               </span>
             </h1>
             <p className="text-sm text-text-secondary mt-1.5 font-medium">Review your items before proceeding to checkout</p>
@@ -105,11 +119,30 @@ const grandTotal = selectedSubtotal + shippingFee;
 
         {/* Cart Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Left Column: Cart Items List */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <div className="rounded-2xl border border-glass-border bg-glass/10 backdrop-blur-md overflow-hidden">
+              {/* Select All Checkbox Header */}
+              <div className="p-4 sm:p-5 bg-white/[0.02] border-b border-glass-border/40 flex items-center justify-between">
+                <label className="flex items-center gap-3 cursor-pointer select-none text-sm font-semibold text-text-primary">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    className="w-5 h-5 cursor-pointer shrink-0 rounded border-glass-border text-accent-primary focus:ring-accent-primary/20 accent-accent-primary"
+                  />
+                  <span>Select All ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>
+                </label>
+                {selectedItems.length > 0 && (
+                  <span className="text-xs font-medium text-text-secondary">
+                    {selectedItems.length} of {cartItems.length} selected
+                  </span>
+                )}
+              </div>
               <div className="divide-y divide-glass-border/40">
+
+
                 {cartItems.map((item) => {
                   const product = item.product;
                   const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
@@ -123,17 +156,17 @@ const grandTotal = selectedSubtotal + shippingFee;
                       {/* Product Thumbnail & Details */}
                       <div className="flex items-center gap-4 min-w-0">
                         <input
-    type="checkbox"
-    checked={selectedItems.includes(product.id)}
-    onChange={() => {
-      if (selectedItems.includes(product.id)) {
-        setSelectedItems(selectedItems.filter(id => id !== product.id));
-      } else {
-        setSelectedItems([...selectedItems, product.id]);
-      }
-    }}
-    className="w-5 h-5 cursor-pointer"
-  />
+                          type="checkbox"
+                          checked={selectedItems.includes(product.id)}
+                          onChange={() => {
+                            if (selectedItems.includes(product.id)) {
+                              setSelectedItems(selectedItems.filter(id => id !== product.id));
+                            } else {
+                              setSelectedItems([...selectedItems, product.id]);
+                            }
+                          }}
+                          className="w-5 h-5 cursor-pointer shrink-0"
+                        />
                         <div className="w-20 h-20 rounded-xl bg-bg-tertiary border border-glass-border overflow-hidden shrink-0 flex items-center justify-center">
                           {primaryImage ? (
                             <img src={primaryImage} alt={product.name} className="w-full h-full object-cover" />
@@ -163,7 +196,7 @@ const grandTotal = selectedSubtotal + shippingFee;
 
                       {/* Quantity Stepper & Price & Delete */}
                       <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 mt-2 sm:mt-0">
-                        
+
                         {/* Unit Price (Desktop) */}
                         <div className="hidden sm:flex flex-col items-end">
                           <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Unit Price</span>
@@ -185,7 +218,7 @@ const grandTotal = selectedSubtotal + shippingFee;
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(product, Math.min(product.stockQuantity, item.quantity + 1))}
+                            onClick={() => updateQuantity(product, item.quantity + 1)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-tertiary text-text-primary font-bold transition-colors cursor-pointer"
                             title="Increase Quantity"
                           >
@@ -227,10 +260,10 @@ const grandTotal = selectedSubtotal + shippingFee;
               <div className="flex flex-col gap-3 text-sm">
                 <div className="flex justify-between text-text-secondary">
                   <span>Subtotal (
-  {selectedCartItems.length}
-  {' '}
-  {selectedCartItems.length === 1 ? 'item' : 'items'}
-)</span>
+                    {selectedCartItems.length}
+                    {' '}
+                    {selectedCartItems.length === 1 ? 'item' : 'items'}
+                    )</span>
                   <span className="font-semibold text-text-primary">₹{selectedSubtotal.toFixed(2)}</span>
                 </div>
 

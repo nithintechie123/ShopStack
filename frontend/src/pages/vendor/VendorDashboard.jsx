@@ -15,6 +15,52 @@ const STATUS_META = {
   REJECTED:         { label: 'Rejected',         cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger',  Icon: XCircle },
 };
 
+const FULFILLMENT_STEPS = {
+  PLACED: {
+    nextStatus: 'PROCESSING',
+    label: 'Start fulfillment',
+    helper: 'Confirm items, verify stock, and begin packing the order.'
+  },
+  PROCESSING: {
+    nextStatus: 'SHIPPED',
+    label: 'Pack order and prepare for shipment',
+    helper: 'Securely pack the products and attach shipment details.'
+  },
+  SHIPPED: {
+    nextStatus: 'OUT_FOR_DELIVERY',
+    label: 'Dispatch to delivery partner',
+    helper: 'Send the parcel to the courier for final delivery.'
+  },
+  OUT_FOR_DELIVERY: {
+    nextStatus: 'DELIVERED',
+    label: 'Confirm delivery complete',
+    helper: 'Mark the order as delivered once the customer receives it.'
+  }
+};
+const getAllowedStatuses = (currentStatus) => {
+  switch (currentStatus) {
+    case "PLACED":
+      return ["PLACED", "PROCESSING", "CANCELLED"];
+
+    case "PROCESSING":
+      return ["PROCESSING", "SHIPPED", "CANCELLED"];
+
+    case "SHIPPED":
+      return ["SHIPPED", "OUT_FOR_DELIVERY"];
+
+    case "OUT_FOR_DELIVERY":
+      return ["OUT_FOR_DELIVERY", "DELIVERED"];
+
+    case "DELIVERED":
+      return ["DELIVERED"];
+
+    case "CANCELLED":
+      return ["CANCELLED"];
+
+    default:
+      return ["PLACED"];
+  }
+};
 const EMPTY_FORM = {
   name: '', brand: '', description: '', price: '', stockQuantity: '', categoryId: '', imageUrl: '',
 };
@@ -474,7 +520,13 @@ export default function VendorDashboard() {
                 {vendorOrders.map((order) => {
                   const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
                   const dateStr = order.orderDate
-                    ? new Date(order.orderDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                    ? new Date(order.orderDate).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                     : 'Recent';
                   const isExpanded = expandedOrderId === order.id;
 
@@ -492,7 +544,12 @@ export default function VendorDashboard() {
                           </div>
                           <div className="flex flex-col gap-0.5">
                             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Customer</span>
-                            <span className="font-semibold text-text-primary">{order.user?.firstName} {order.user?.lastName} ({order.user?.email})</span>
+                            <span className="font-semibold text-text-primary">{order.user?.firstName} {order.user?.lastName}</span>
+                            <span className="text-[10px] text-text-muted">{order.user?.email}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5 max-w-[22rem]">
+                            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Delivery Address</span>
+                            <span className="font-semibold text-text-secondary truncate">{order.shippingAddress || 'Not provided'}</span>
                           </div>
                         </div>
 
@@ -500,17 +557,19 @@ export default function VendorDashboard() {
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Status:</span>
                             <select
-                              value={currentStatus}
-                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                              className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-bold px-3 py-1.5 outline-none focus:border-accent-primary cursor-pointer"
-                            >
-                              <option value="PLACED">Placed</option>
-                              <option value="PROCESSING">Processing</option>
-                              <option value="SHIPPED">Shipped</option>
-                              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                              <option value="DELIVERED">Delivered</option>
-                              <option value="CANCELLED">Cancelled</option>
-                            </select>
+  value={currentStatus}
+  onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+  className="bg-bg-tertiary border border-glass-border rounded-lg text-text-primary text-xs font-bold px-3 py-1.5 outline-none focus:border-accent-primary cursor-pointer"
+>
+  {getAllowedStatuses(currentStatus).map((status) => (
+    <option key={status} value={status}>
+      {status
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())}
+    </option>
+  ))}
+</select>
                           </div>
 
                           <button

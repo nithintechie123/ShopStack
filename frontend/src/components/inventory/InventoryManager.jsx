@@ -1,29 +1,35 @@
 import { useState } from 'react';
-import { 
-  Package, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  Search, 
-  IndianRupee, 
-  Plus, 
-  Minus, 
-  Save, 
+import {
+  Package,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Search,
+  IndianRupee,
+  Plus,
+  Minus,
+  Save,
   RefreshCw,
-  Layers
+  Layers,
+  Download,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { updateVendorStock, updateAdminStock } from '../../api/products';
 
-export default function InventoryManager({ 
-  products = [], 
-  onProductUpdate, 
-  userRole = 'VENDOR' 
+export default function InventoryManager({
+  products = [],
+  onProductUpdate,
+  userRole = 'VENDOR'
 }) {
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [draftStocks, setDraftStocks] = useState({});
   const [updatingIds, setUpdatingIds] = useState({});
   const [successIds, setSuccessIds] = useState({});
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   // Calculate metrics
   const totalProducts = products.length;
@@ -56,7 +62,7 @@ export default function InventoryManager({
     try {
       const updateFn = userRole === 'ADMIN' ? updateAdminStock : updateVendorStock;
       const res = await updateFn(product.id, newQty);
-      
+
       setSuccessIds((prev) => ({ ...prev, [product.id]: true }));
       setTimeout(() => {
         setSuccessIds((prev) => ({ ...prev, [product.id]: false }));
@@ -80,7 +86,7 @@ export default function InventoryManager({
     try {
       const updateFn = userRole === 'ADMIN' ? updateAdminStock : updateVendorStock;
       const res = await updateFn(product.id, updatedVal);
-      
+
       setSuccessIds((prev) => ({ ...prev, [product.id]: true }));
       setTimeout(() => {
         setSuccessIds((prev) => ({ ...prev, [product.id]: false }));
@@ -98,7 +104,7 @@ export default function InventoryManager({
 
   // Filter products
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = 
+    const matchesSearch =
       p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.category?.name?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -111,9 +117,79 @@ export default function InventoryManager({
     return true;
   });
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) {
+      return <ArrowUpDown size={12} className="text-text-muted/50 ml-1.5 shrink-0" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp size={12} className="text-accent-primary ml-1.5 shrink-0" /> 
+      : <ChevronDown size={12} className="text-accent-primary ml-1.5 shrink-0" />;
+  };
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    let aVal, bVal;
+    if (sortField === 'name') {
+      aVal = a.name?.toLowerCase() || '';
+      bVal = b.name?.toLowerCase() || '';
+    } else if (sortField === 'category') {
+      aVal = a.category?.name?.toLowerCase() || '';
+      bVal = b.category?.name?.toLowerCase() || '';
+    } else if (sortField === 'price') {
+      aVal = parseFloat(a.price || 0);
+      bVal = parseFloat(b.price || 0);
+    } else if (sortField === 'stockQuantity') {
+      aVal = a.stockQuantity || 0;
+      bVal = b.stockQuantity || 0;
+    }
+
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const exportToCSV = () => {
+    const headers = ['Product ID', 'Name', 'Brand', 'Store', 'Category', 'Price (INR)', 'Stock Quantity', 'Status'];
+    const rows = sortedProducts.map(p => {
+      const status = p.stockQuantity === 0 ? 'Out of Stock' : p.stockQuantity <= 5 ? 'Low Stock' : 'In Stock';
+      return [
+        p.id || '',
+        `"${(p.name || '').replace(/"/g, '""')}"`,
+        `"${(p.brand || '').replace(/"/g, '""')}"`,
+        `"${(p.vendor?.storeName || '').replace(/"/g, '""')}"`,
+        `"${(p.category?.name || '').replace(/"/g, '""')}"`,
+        p.price || 0,
+        p.stockQuantity || 0,
+        status
+      ];
+    });
+
+    const csvString = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute("download", `shopstack_inventory_${date}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      
+
       {/* Summary Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="p-4 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex items-center gap-3">
@@ -180,11 +256,10 @@ export default function InventoryManager({
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                filter === tab.key
-                  ? 'bg-accent-primary text-white shadow-md shadow-accent-primary/20'
-                  : 'bg-bg-tertiary/40 border border-glass-border/40 text-text-secondary hover:text-text-primary'
-              }`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${filter === tab.key
+                ? 'bg-accent-primary text-white shadow-md shadow-accent-primary/20'
+                : 'bg-bg-tertiary/40 border border-glass-border/40 text-text-secondary hover:text-text-primary'
+                }`}
             >
               <span>{tab.label}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${tab.badgeCls || 'bg-black/20 text-white'}`}>
@@ -194,96 +269,140 @@ export default function InventoryManager({
           ))}
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-          <input
-            type="text"
-            placeholder="Search catalog inventory..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-bg-tertiary/60 border border-glass-border rounded-lg text-xs text-text-primary pl-9 pr-3 py-2 outline-none focus:border-accent-primary"
-          />
+        {/* Export CSV & Search Bar */}
+        <div className="flex w-full md:w-auto items-center gap-3">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-1.5 px-3 py-2 bg-bg-tertiary/60 hover:bg-bg-tertiary border border-glass-border text-text-secondary hover:text-text-primary text-xs font-bold rounded-lg cursor-pointer transition-all duration-200"
+            title="Export active list to CSV"
+          >
+            <Download size={14} />
+            <span>Export CSV</span>
+          </button>
+
+          <div className="relative w-full md:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Search catalog inventory..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-bg-tertiary/60 border border-glass-border rounded-lg text-xs text-text-primary pl-9 pr-3 py-2 outline-none focus:border-accent-primary"
+            />
+          </div>
         </div>
       </div>
 
       {/* Inventory Products Table */}
       <div className="overflow-x-auto rounded-xl border border-glass-border bg-glass/5">
-        {filteredProducts.length === 0 ? (
+        {sortedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-text-muted">
             <Package size={40} className="opacity-40" />
             <h4 className="text-sm font-bold text-text-secondary">No products match this inventory filter</h4>
           </div>
         ) : (
           <table className="min-w-full divide-y divide-glass-border text-xs text-left">
-            <thead className="bg-bg-tertiary/70 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-4">Product Specs</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Unit Price</th>
-                <th className="px-6 py-4">Stock Status</th>
-                <th className="px-6 py-4">Inline Stock Control</th>
-                <th className="px-6 py-4">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-glass-border/40">
-              {filteredProducts.map((product) => {
-                const stockVal = getStockValue(product);
-                const isDraftDirty = draftStocks[product.id] !== undefined && draftStocks[product.id] !== product.stockQuantity;
-                const isUpdating = updatingIds[product.id];
-                const isSuccess = successIds[product.id];
+          <thead className="bg-bg-tertiary/70 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+            <tr>
+              <th 
+                className="px-6 py-4 cursor-pointer hover:bg-bg-tertiary/90 select-none transition-colors"
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Product Specs</span>
+                  {renderSortIcon('name')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-4 cursor-pointer hover:bg-bg-tertiary/90 select-none transition-colors"
+                onClick={() => handleSort('category')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Category</span>
+                  {renderSortIcon('category')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-4 cursor-pointer hover:bg-bg-tertiary/90 select-none transition-colors"
+                onClick={() => handleSort('price')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Unit Price</span>
+                  {renderSortIcon('price')}
+                </div>
+              </th>
+              <th 
+                className="px-6 py-4 cursor-pointer hover:bg-bg-tertiary/90 select-none transition-colors"
+                onClick={() => handleSort('stockQuantity')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Stock Status</span>
+                  {renderSortIcon('stockQuantity')}
+                </div>
+              </th>
+              {userRole !== 'ADMIN' && <th className="px-6 py-4">Inline Stock Control</th>}
+              {userRole !== 'ADMIN' && <th className="px-6 py-4">Action</th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-glass-border/40">
+            {sortedProducts.map((product) => {
+              const stockVal = getStockValue(product);
+              const isDraftDirty = draftStocks[product.id] !== undefined && draftStocks[product.id] !== product.stockQuantity;
+              const isUpdating = updatingIds[product.id];
+              const isSuccess = successIds[product.id];
 
-                const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
+              const primaryImage = product.images?.find((i) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl;
 
-                return (
-                  <tr key={product.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Specs */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-bg-tertiary border border-glass-border/40 overflow-hidden shrink-0 flex items-center justify-center">
-                          {primaryImage ? (
-                            <img src={primaryImage} alt={product.name} className="w-full h-full object-contain p-1" />
-                          ) : (
-                            <Package size={18} className="text-text-muted opacity-60" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-text-primary text-xs">{product.name}</div>
-                          <div className="text-[10px] text-text-muted mt-0.5">
-                            {product.brand ? `${product.brand} • ` : ''} {product.vendor?.storeName ? `Store: ${product.vendor.storeName}` : ''}
-                          </div>
+              return (
+                <tr key={product.id} className="hover:bg-white/[0.02] transition-colors">
+                  {/* Specs */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-bg-tertiary border border-glass-border/40 overflow-hidden shrink-0 flex items-center justify-center">
+                        {primaryImage ? (
+                          <img src={primaryImage} alt={product.name} className="w-full h-full object-contain p-1" />
+                        ) : (
+                          <Package size={18} className="text-text-muted opacity-60" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-text-primary text-xs">{product.name}</div>
+                        <div className="text-[10px] text-text-muted mt-0.5">
+                          {product.brand ? `${product.brand} • ` : ''} {product.vendor?.storeName ? `Store: ${product.vendor.storeName}` : ''}
                         </div>
                       </div>
-                    </td>
+                    </div>
+                  </td>
 
-                    {/* Category */}
-                    <td className="px-6 py-4 text-text-secondary font-medium">
-                      {product.category?.name || '—'}
-                    </td>
+                  {/* Category */}
+                  <td className="px-6 py-4 text-text-secondary font-medium">
+                    {product.category?.name || '—'}
+                  </td>
 
-                    {/* Price */}
-                    <td className="px-6 py-4 font-bold text-text-primary">
-                      ₹{parseFloat(product.price || 0).toFixed(2)}
-                    </td>
+                  {/* Price */}
+                  <td className="px-6 py-4 font-bold text-text-primary">
+                    ₹{parseFloat(product.price || 0).toFixed(2)}
+                  </td>
 
-                    {/* Stock Status Badge */}
-                    <td className="px-6 py-4">
-                      {product.stockQuantity === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent-danger/10 border border-accent-danger/25 text-accent-danger">
-                          <XCircle size={12} /> Out of Stock
-                        </span>
-                      ) : product.stockQuantity <= 5 ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-500">
-                          <AlertTriangle size={12} /> Low ({product.stockQuantity})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent-secondary/10 border border-accent-secondary/25 text-accent-secondary">
-                          <CheckCircle size={12} /> In Stock ({product.stockQuantity})
-                        </span>
-                      )}
-                    </td>
+                  {/* Stock Status Badge */}
+                  <td className="px-6 py-4">
+                    {product.stockQuantity === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent-danger/10 border border-accent-danger/25 text-accent-danger">
+                        <XCircle size={12} /> Out of Stock
+                      </span>
+                    ) : product.stockQuantity <= 5 ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-500">
+                        <AlertTriangle size={12} /> Low ({product.stockQuantity})
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent-secondary/10 border border-accent-secondary/25 text-accent-secondary">
+                        <CheckCircle size={12} /> In Stock ({product.stockQuantity})
+                      </span>
+                    )}
+                  </td>
 
-                    {/* Inline Stock Control */}
+                  {/* Inline Stock Control */}
+                  {userRole !== 'ADMIN' && (
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="flex items-center border border-glass-border rounded-lg bg-bg-tertiary/40 p-1">
@@ -324,8 +443,10 @@ export default function InventoryManager({
                         </button>
                       </div>
                     </td>
+                  )}
 
-                    {/* Save Action */}
+                  {/* Save Action */}
+                  {userRole !== 'ADMIN' && (
                     <td className="px-6 py-4">
                       {isSuccess ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-secondary">
@@ -336,11 +457,10 @@ export default function InventoryManager({
                           type="button"
                           onClick={() => handleSaveStock(product)}
                           disabled={isUpdating || !isDraftDirty}
-                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-sm ${
-                            isDraftDirty 
-                              ? 'bg-accent-primary hover:bg-accent-primary-hover text-white shadow-accent-primary/20'
-                              : 'bg-bg-tertiary text-text-muted border border-glass-border opacity-60 cursor-not-allowed'
-                          }`}
+                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-sm ${isDraftDirty
+                            ? 'bg-accent-primary hover:bg-accent-primary-hover text-white shadow-accent-primary/20'
+                            : 'bg-bg-tertiary text-text-muted border border-glass-border opacity-60 cursor-not-allowed'
+                            }`}
                         >
                           {isUpdating ? (
                             <RefreshCw size={12} className="animate-spin" />
@@ -351,11 +471,12 @@ export default function InventoryManager({
                         </button>
                       )}
                     </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
         )}
       </div>
     </div>
