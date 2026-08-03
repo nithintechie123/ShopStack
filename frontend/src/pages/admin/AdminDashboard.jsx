@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
 import { getAdminOrders, updateOrderStatus } from '../../api/orders';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3 } from 'lucide-react';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3, Ticket } from 'lucide-react';
 import DashboardCards from '../../components/admin/DashboardCards';
 import OrderTracker from '../../components/orders/OrderTracker';
 import { Link } from 'react-router-dom';
 import InventoryManager from '../../components/inventory/InventoryManager';
+import CouponManagement from '../../components/admin/CouponManagement';
 
 export default function AdminDashboard() {
   const [customerCount, setCustomerCount] = useState(0);
@@ -156,6 +157,17 @@ export default function AdminDashboard() {
                 {allProducts.filter(p => p.stockQuantity <= 5).length} alert
               </span>
             )}
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === 'coupons'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+            }`}
+            onClick={() => setActiveTab('coupons')}
+          >
+            <Ticket size={15} />
+            <span>Coupons</span>
           </button>
         </div>
 
@@ -387,6 +399,9 @@ export default function AdminDashboard() {
             />
           </div>
         )}
+
+        {/* Coupons Tab */}
+        {activeTab === 'coupons' && <CouponManagement />}
       </div>
 
       {/* Product Validation Modal */}

@@ -137,22 +137,4 @@ public class OrderController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
-    @GetMapping("/api/coupons/validate/{code}")
-    public ResponseEntity<?> validateCoupon(@PathVariable("code") String code) {
-        try {
-            Coupon coupon = couponRepository.findByCodeIgnoreCaseAndActiveTrue(code)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid or inactive coupon code!"));
-            if (coupon.getExpiryDate().isBefore(LocalDateTime.now())) {
-                throw new IllegalArgumentException("Coupon code has expired!");
-            }
-            return ResponseEntity.ok(Map.of(
-                    "code", coupon.getCode(),
-                    "discountType", coupon.getDiscountType(),
-                    "discountValue", coupon.getDiscountValue()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 }

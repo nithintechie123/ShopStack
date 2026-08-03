@@ -23,6 +23,9 @@ import com.shopstack.shopstack.model.Coupon;
 import com.shopstack.shopstack.model.OrderItem;
 import com.shopstack.shopstack.model.Product;
 
+import com.shopstack.shopstack.dto.CouponValidationResponse;
+import com.shopstack.shopstack.service.CouponService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,6 +37,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CouponRepository couponRepository;
     private final PaymentService paymentService;
+    private final CouponService couponService;
 
 
     public Order placeOrder(User user, CheckoutRequest request) {
@@ -69,25 +73,11 @@ public class OrderService {
         }
 
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-
-            Coupon coupon = couponRepository
-                    .findByCodeIgnoreCaseAndActiveTrue(request.getCouponCode())
-                    .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
-
-            if (coupon.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                throw new RuntimeException("Coupon Expired");
+            CouponValidationResponse valResponse = couponService.validateCoupon(request.getCouponCode(), subtotal);
+            if (!valResponse.isValid()) {
+                throw new RuntimeException(valResponse.getMessage());
             }
-
-            if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
-
-                discount = subtotal.multiply(coupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100));
-
-            } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
-
-                discount = coupon.getDiscountValue();
-
-            }
+            discount = valResponse.getCalculatedDiscount();
         }
 
         BigDecimal shippingFee = (subtotal.compareTo(new BigDecimal("1000")) > 0 || subtotal.compareTo(BigDecimal.ZERO) == 0)
@@ -172,9 +162,13 @@ public class OrderService {
 
 
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            couponService.incrementCouponUsage(request.getCouponCode());
+        }
 
+        return savedOrder;
     }
 
 
@@ -317,20 +311,11 @@ public class OrderService {
         }
 
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-            Coupon coupon = couponRepository
-                    .findByCodeIgnoreCaseAndActiveTrue(request.getCouponCode())
-                    .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
-
-            if (coupon.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                throw new RuntimeException("Coupon Expired");
+            CouponValidationResponse valResponse = couponService.validateCoupon(request.getCouponCode(), subtotal);
+            if (!valResponse.isValid()) {
+                throw new RuntimeException(valResponse.getMessage());
             }
-
-            if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
-                discount = subtotal.multiply(coupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100));
-            } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
-                discount = coupon.getDiscountValue();
-            }
+            discount = valResponse.getCalculatedDiscount();
         }
 
         //shipping fee

@@ -287,6 +287,11 @@ export default function Cart() {
                   </p>
                 )}
 
+                <div className="p-2.5 rounded-xl bg-accent-primary/10 border border-accent-primary/20 text-accent-primary text-[11px] font-semibold flex items-center justify-between">
+                  <span>🏷️ Have a discount coupon?</span>
+                  <span className="font-bold">Apply at Checkout</span>
+                </div>
+
                 <div className="h-px bg-glass-border my-1" />
 
                 <div className="flex justify-between text-base font-extrabold text-text-primary">
