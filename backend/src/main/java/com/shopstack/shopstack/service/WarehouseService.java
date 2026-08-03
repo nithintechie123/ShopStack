@@ -1,23 +1,23 @@
 package com.shopstack.shopstack.service;
 
+import java.util.List;
 import java.util.Optional;
 
+import com.shopstack.shopstack.dto.warehouse.*;
 import com.shopstack.shopstack.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.shopstack.shopstack.dto.warehouse.AllocateOrderRequest;
 import com.shopstack.shopstack.model.Order;
 import com.shopstack.shopstack.model.OrderItem;
 import com.shopstack.shopstack.model.Warehouse;
 import com.shopstack.shopstack.model.WarehouseAllocation;
 import com.shopstack.shopstack.model.WarehouseInventory;
-import com.shopstack.shopstack.dto.warehouse.CreateWarehouseRequest;
 import com.shopstack.shopstack.WarehouseStatus;
 import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.dto.warehouse.AddInventoryRequest;
 import com.shopstack.shopstack.model.Product;
-import com.shopstack.shopstack.model.Warehouse;
+import java.util.UUID;
+import com.shopstack.shopstack.dto.warehouse.UpdateInventoryRequest;
 import com.shopstack.shopstack.model.WarehouseInventory;
 
 import lombok.RequiredArgsConstructor;
@@ -137,4 +137,66 @@ public class WarehouseService {
 
         return warehouseInventoryRepository.save(inventory);
     }
+
+
+    @Transactional
+    public WarehouseInventory updateInventory(
+            UUID inventoryId,
+            UpdateInventoryRequest request) {
+
+        System.out.println("Received Inventory ID: " + inventoryId);
+
+        System.out.println("All Inventories:");
+        warehouseInventoryRepository.findAll().forEach(i ->
+                System.out.println(i.getId())
+        );
+
+        WarehouseInventory inventory = warehouseInventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found."));
+
+        inventory.setAvailableQuantity(request.getAvailableQuantity());
+        inventory.setReservedQuantity(request.getReservedQuantity());
+
+        return warehouseInventoryRepository.save(inventory);
+    }
+
+    @Transactional
+    public String deleteInventory(UUID inventoryId) {
+
+        WarehouseInventory inventory = warehouseInventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found."));
+
+        warehouseInventoryRepository.delete(inventory);
+
+        return "Inventory deleted successfully.";
+    }
+
+    @Transactional(readOnly = true)
+    public List<Warehouse> getAllWarehouses() {
+
+        return warehouseRepository.findAll();
+    }
+
+
+    @Transactional
+    public Warehouse updateWarehouse(
+            UUID warehouseId,
+            UpdateWarehouseRequest request) {
+
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+
+        warehouse.setWarehouseName(request.getWarehouseName());
+        warehouse.setAddress(request.getAddress());
+        warehouse.setCity(request.getCity());
+        warehouse.setState(request.getState());
+        warehouse.setPincode(request.getPincode());
+        warehouse.setManagerName(request.getManagerName());
+        warehouse.setContactNumber(request.getContactNumber());
+        warehouse.setStatus(request.getStatus());
+
+        return warehouseRepository.save(warehouse);
+    }
+
+
 }

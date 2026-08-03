@@ -2,6 +2,8 @@ package com.shopstack.shopstack.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.UuidGenerator;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,6 +31,7 @@ public class WarehouseInventory {
     @Id
     @UuidGenerator
     @Column(nullable = false, updatable = false)
+    @JsonIgnore
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
