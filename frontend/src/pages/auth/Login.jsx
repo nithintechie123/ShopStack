@@ -129,6 +129,12 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="flex justify-end -mt-2">
+                <Link to="/forgot-password" className="text-xs font-semibold text-accent-primary hover:text-indigo-600 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+
               <button
                 type="submit"
                 className="w-full cursor-pointer py-3 rounded-lg bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white font-semibold text-sm shadow-lg shadow-accent-primary/10 hover:shadow-accent-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none mt-2"

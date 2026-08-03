@@ -6,6 +6,7 @@ import { ProtectedRoute, RoleRoute } from './components/guards/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Home from './pages/home/Home';
 import ProductDetail from './pages/home/ProductDetail'; 
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
               <Route path="/register" element={<Layout><Register /></Layout>} />
+              <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
               <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
 
               {/* Vendor Routes */}
