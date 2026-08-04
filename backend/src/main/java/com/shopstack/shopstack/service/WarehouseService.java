@@ -199,4 +199,57 @@ public class WarehouseService {
     }
 
 
+
+    @Transactional
+    public String pickOrder(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"ALLOCATED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only allocated orders can be picked.");
+        }
+
+        order.setTrackingStatus("PICKED");
+
+        orderRepository.save(order);
+
+        return "Order picked successfully.";
+    }
+
+    @Transactional
+    public String packOrder(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"PICKED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only picked orders can be packed.");
+        }
+
+        order.setTrackingStatus("PACKED");
+
+        orderRepository.save(order);
+
+        return "Order packed successfully.";
+    }
+
+    @Transactional
+    public String markReadyForShipment(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"PACKED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only packed orders can be marked ready for shipment.");
+        }
+
+        order.setTrackingStatus("READY_TO_SHIP");
+
+        orderRepository.save(order);
+
+        return "Order marked as ready for shipment.";
+    }
+
+
 }

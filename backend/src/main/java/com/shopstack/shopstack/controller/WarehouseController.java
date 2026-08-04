@@ -150,4 +150,60 @@ public class WarehouseController {
         }
     }
 
+    @PutMapping("/orders/{orderId}/pick")
+    public ResponseEntity<?> pickOrder(@PathVariable UUID orderId) {
+
+        try {
+
+            String message = warehouseService.pickOrder(orderId);
+
+            return ResponseEntity.ok(
+                    Map.of("message", message)
+            );
+
+        } catch (RuntimeException ex) {
+
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+
+    @PutMapping("/orders/{orderId}/pack")
+    public ResponseEntity<?> packOrder(@PathVariable UUID orderId) {
+
+        try {
+
+            String message = warehouseService.packOrder(orderId);
+
+            return ResponseEntity.ok(
+                    Map.of("message", message)
+            );
+
+        } catch (RuntimeException ex) {
+
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PutMapping("/orders/{orderId}/ready")
+    public ResponseEntity<?> markReadyForShipment(@PathVariable UUID orderId) {
+
+        try {
+
+            String message = warehouseService.markReadyForShipment(orderId);
+
+            return ResponseEntity.ok(
+                    Map.of("message", message)
+            );
+
+        } catch (RuntimeException ex) {
+
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+
 }
