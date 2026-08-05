@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw } from 'lucide-react';
+import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw, RotateCcw } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { getMyOrders } from '../../api/orders';
 import OrderTracker from '../../components/orders/OrderTracker';
@@ -196,6 +196,17 @@ export default function Orders() {
                         <Truck size={14} />
                         <span>Track</span>
                       </Link>
+                      {(currentStatus === "PLACED" ||
+                       currentStatus === "DELIVERED"
+                       ) && (
+                        <Link
+                          to={`/orders/${order.id}/return`}
+                          className="inline-flex items-center gap-1 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                         <RotateCcw size={14} />
+                         <span>Request Return</span>
+                        </Link>
+                      )}
 
                       <button
                         onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}

@@ -21,6 +21,8 @@ import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
 import OrderTrackPage from './pages/customer/OrderTrackPage';
+import ReturnRequest from './pages/customer/ReturnRequest';
+import RefundStatus from "./pages/customer/RefundStatus";
 import Wishlist from './pages/customer/Wishlist';
 import Checkout from './pages/customer/Checkout';
 import Cart from './pages/customer/Cart';
@@ -74,6 +76,19 @@ export default function App() {
                 <Route path="/profile" element={<Layout><Profile /></Layout>} />
                 <Route path="/orders" element={<Layout><Orders /></Layout>} />
                 <Route path="/orders/:id/track" element={<Layout><OrderTrackPage /></Layout>} />
+
+                {/* NEW RETURN PAGE */}
+                <Route
+                  path="/orders/:id/return"
+                  element={<Layout><ReturnRequest /></Layout>}
+                />
+
+                {/* REFUND STATUS PAGE */}
+                <Route
+                  path="/refund/:id"
+                  element={<Layout><RefundStatus /></Layout>}
+                />
+
                 <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
                 <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
               </Route>
