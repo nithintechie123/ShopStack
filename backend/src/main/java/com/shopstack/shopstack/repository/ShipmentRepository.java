@@ -15,4 +15,5 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     Optional<Shipment> findByOrder(Order order);
 
     Optional<Shipment> findByTrackingNumber(String trackingNumber);
+
 }

@@ -4,18 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 import com.shopstack.shopstack.dto.warehouse.*;
+import com.shopstack.shopstack.model.*;
 import com.shopstack.shopstack.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.shopstack.shopstack.model.Order;
-import com.shopstack.shopstack.model.OrderItem;
-import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.model.WarehouseAllocation;
-import com.shopstack.shopstack.model.WarehouseInventory;
 import com.shopstack.shopstack.WarehouseStatus;
 import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.model.Product;
+
 import java.util.UUID;
 import com.shopstack.shopstack.dto.warehouse.UpdateInventoryRequest;
 import com.shopstack.shopstack.model.WarehouseInventory;
@@ -31,6 +27,7 @@ public class WarehouseService {
     private final WarehouseInventoryRepository warehouseInventoryRepository;
     private final WarehouseAllocationRepository warehouseAllocationRepository;
     private final ProductRepository productRepository;
+    private final StockMovementService stockMovementService;
 
     @Transactional
     public String allocateOrder(AllocateOrderRequest request) {
@@ -74,6 +71,14 @@ public class WarehouseService {
             );
 
             warehouseInventoryRepository.save(inventory);
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Allocated - " + order.getId()
+            );
         }
 
         WarehouseAllocation allocation = WarehouseAllocation.builder()
@@ -135,7 +140,17 @@ public class WarehouseService {
                 .reservedQuantity(0)
                 .build();
 
-        return warehouseInventoryRepository.save(inventory);
+        WarehouseInventory savedInventory = warehouseInventoryRepository.save(inventory);
+
+        stockMovementService.recordMovement(
+                warehouse,
+                product,
+                MovementType.IN,
+                request.getAvailableQuantity(),
+                "Inventory Received"
+        );
+
+        return savedInventory;
     }
 
 
@@ -214,6 +229,29 @@ public class WarehouseService {
 
         orderRepository.save(order);
 
+
+        List<WarehouseAllocation> allocations =
+                warehouseAllocationRepository.findByOrder(order);
+
+        if (allocations.isEmpty()) {
+            throw new RuntimeException("Warehouse allocation not found.");
+        }
+
+        Warehouse warehouse = allocations.get(0).getWarehouse();
+
+        for (OrderItem item : order.getItems()) {
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Picked - " + order.getId()
+            );
+        }
+
+
+
         return "Order picked successfully.";
     }
 
@@ -230,6 +268,29 @@ public class WarehouseService {
         order.setTrackingStatus("PACKED");
 
         orderRepository.save(order);
+
+        List<WarehouseAllocation> allocations =
+                warehouseAllocationRepository.findByOrder(order);
+
+        if (allocations.isEmpty()) {
+            throw new RuntimeException("Warehouse allocation not found.");
+        }
+
+        Warehouse warehouse = allocations.get(0).getWarehouse();
+
+        for (OrderItem item : order.getItems()) {
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Packed - " + order.getId()
+            );
+        }
+
+
+
 
         return "Order packed successfully.";
     }
