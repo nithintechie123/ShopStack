@@ -230,6 +230,23 @@ public class OrderService {
             }
         }
 
+
+        // Vendor can update only these statuses
+        if (isVendor) {
+
+            if (!uppercaseStatus.equals("CONFIRMED")
+                    && !uppercaseStatus.equals("PREPARING")
+                    && !uppercaseStatus.equals("READY_FOR_WAREHOUSE")) {
+
+                throw new RuntimeException(
+                        "Vendor can only update to CONFIRMED, PREPARING or READY_FOR_WAREHOUSE.");
+            }
+        }
+
+
+
+
+
         order.setTrackingStatus(uppercaseStatus);
 
         return orderRepository.save(order);

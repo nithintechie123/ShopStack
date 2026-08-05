@@ -17,49 +17,43 @@ const STATUS_META = {
 
 const FULFILLMENT_STEPS = {
   PLACED: {
-    nextStatus: 'PROCESSING',
-    label: 'Start fulfillment',
-    helper: 'Confirm items, verify stock, and begin packing the order.'
+    nextStatus: "CONFIRMED",
+    label: "Confirm Order",
+    helper: "Confirm the order received from the customer."
   },
-  PROCESSING: {
-    nextStatus: 'SHIPPED',
-    label: 'Pack order and prepare for shipment',
-    helper: 'Securely pack the products and attach shipment details.'
+
+  CONFIRMED: {
+    nextStatus: "PREPARING",
+    label: "Start Preparing",
+    helper: "Prepare the order for warehouse handover."
   },
-  SHIPPED: {
-    nextStatus: 'OUT_FOR_DELIVERY',
-    label: 'Dispatch to delivery partner',
-    helper: 'Send the parcel to the courier for final delivery.'
-  },
-  OUT_FOR_DELIVERY: {
-    nextStatus: 'DELIVERED',
-    label: 'Confirm delivery complete',
-    helper: 'Mark the order as delivered once the customer receives it.'
+
+  PREPARING: {
+    nextStatus: "READY_FOR_WAREHOUSE",
+    label: "Ready For Warehouse",
+    helper: "Order is ready for warehouse processing."
   }
 };
 const getAllowedStatuses = (currentStatus) => {
+
   switch (currentStatus) {
+
     case "PLACED":
-      return ["PLACED", "PROCESSING", "CANCELLED"];
+      return ["PLACED", "CONFIRMED"];
 
-    case "PROCESSING":
-      return ["PROCESSING", "SHIPPED", "CANCELLED"];
+    case "CONFIRMED":
+      return ["CONFIRMED", "PREPARING"];
 
-    case "SHIPPED":
-      return ["SHIPPED", "OUT_FOR_DELIVERY"];
+    case "PREPARING":
+      return ["PREPARING", "READY_FOR_WAREHOUSE"];
 
-    case "OUT_FOR_DELIVERY":
-      return ["OUT_FOR_DELIVERY", "DELIVERED"];
-
-    case "DELIVERED":
-      return ["DELIVERED"];
-
-    case "CANCELLED":
-      return ["CANCELLED"];
+    case "READY_FOR_WAREHOUSE":
+      return ["READY_FOR_WAREHOUSE"];
 
     default:
-      return ["PLACED"];
+      return [currentStatus];
   }
+
 };
 const EMPTY_FORM = {
   name: '', brand: '', description: '', price: '', stockQuantity: '', categoryId: '', imageUrl: '',
@@ -288,7 +282,7 @@ export default function VendorDashboard() {
             onClick={() => setActiveTab('orders')}
           >
             <Truck size={16} />
-            <span>Order Fulfillment & Tracking</span>
+            <span>Vendor Order Processing</span>
             {vendorOrders.length > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{vendorOrders.length}</span>}
           </button>
           <button
@@ -508,12 +502,12 @@ export default function VendorDashboard() {
         {/* Tab 2: Vendor Orders List */}
         {activeTab === 'orders' && (
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-text-primary">Orders Fulfillment & Shipment Tracking</h2>
+            <h2 className="text-lg font-bold text-text-primary">Vendor Order Management</h2>
             {vendorOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 py-16 border border-glass-border rounded-xl bg-glass/5 text-text-muted">
                 <ShoppingBag size={44} className="opacity-50 text-accent-primary" />
                 <h3 className="text-base font-bold text-text-secondary">No customer orders yet</h3>
-                <p className="text-sm">When customers purchase your products, orders will appear here for fulfillment.</p>
+                <p className="text-sm">When customers place orders, you can confirm and prepare them for warehouse processing here.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-6">
