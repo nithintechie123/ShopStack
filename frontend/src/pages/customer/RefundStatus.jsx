@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, Package, CheckCircle, Clock, Circle } from "lucide-react";
-import { getOrderById } from "../../api/orders";
+import { getOrderById, getReturnRequest,} from "../../api/orders";
 
 function RefundStatus() {
   const { id } = useParams();
 
   const [order, setOrder] = useState(null);
+  const [returnRequest, setReturnRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -15,10 +16,14 @@ function RefundStatus() {
 
     setLoading(true);
 
-    getOrderById(id)
-       .then((res) => {
-         setOrder(res.data);
-    })
+    Promise.all([
+    getOrderById(id),
+    getReturnRequest(id),
+])
+.then(([orderRes, returnRes]) => {
+    setOrder(orderRes.data);
+    setReturnRequest(returnRes.data);
+})
     .catch((err) => {
       setError(
         err.response?.data?.error ||
@@ -201,7 +206,7 @@ if (!order) return null;
       </p>
 
       <span className="inline-flex mt-2 rounded-full bg-yellow-500/20 px-3 py-1 text-yellow-400">
-        Pending Review
+        {returnRequest?.status || "PENDING"}
       </span>
     </div>
 

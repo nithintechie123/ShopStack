@@ -10,7 +10,10 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { getOrderById } from "../../api/orders";
+import {
+  getOrderById,
+  submitReturnRequest,
+} from "../../api/orders";
 
 export default function ReturnRequest() {
   const { id } = useParams();
@@ -47,19 +50,27 @@ export default function ReturnRequest() {
     setImages(Array.from(e.target.files));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    console.log({
-      orderId: id,
+  try {
+    await submitReturnRequest(id, {
       reason,
       description,
       refundMethod,
-      images,
     });
 
+    alert("Return request submitted successfully!");
+
     navigate(`/refund/${id}`);
-  };
+
+  } catch (err) {
+    alert(
+      err.response?.data?.error ||
+      "Failed to submit return request."
+    );
+  }
+};
 
   if (loading) {
     return (

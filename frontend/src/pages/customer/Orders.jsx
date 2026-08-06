@@ -197,15 +197,29 @@ export default function Orders() {
                         <span>Track</span>
                       </Link>
                       {(currentStatus === "PLACED" ||
-                       currentStatus === "DELIVERED"
-                       ) && (
-                        <Link
-                          to={`/orders/${order.id}/return`}
-                          className="inline-flex items-center gap-1 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                         <RotateCcw size={14} />
-                         <span>Request Return</span>
-                        </Link>
+                        currentStatus === "DELIVERED") && (
+
+                        order.hasReturnRequest ? (
+
+                          <Link
+                            to={`/refund/${order.id}`}
+                            className="inline-flex items-center gap-1 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <RefreshCw size={14} />
+                            <span>Track Refund</span>
+                          </Link>
+
+                        ) : (
+
+                          <Link
+                            to={`/orders/${order.id}/return`}
+                            className="inline-flex items-center gap-1 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <RotateCcw size={14} />
+                            <span>Request Return</span>
+                          </Link>
+
+                        )
                       )}
 
                       <button
@@ -217,6 +231,7 @@ export default function Orders() {
                       </button>
                     </div>
                   </div>
+
 
                   {/* Items summary preview */}
                   <div className="p-6 flex flex-col gap-4">

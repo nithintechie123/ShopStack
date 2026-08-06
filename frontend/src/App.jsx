@@ -10,6 +10,7 @@ import Home from './pages/home/Home';
 import ProductDetail from './pages/home/ProductDetail'; 
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProfile from './pages/vendor/VendorProfile';
+import VendorReturnManagement from './pages/vendor/VendorReturnManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProfile from './pages/admin/AdminProfile';
 import Reports from './pages/admin/Reports';
@@ -55,9 +56,21 @@ export default function App() {
 
               {/* Vendor Routes */}
               <Route element={<RoleRoute role="VENDOR" />}>
-                <Route path="/vendor" element={<Layout><VendorDashboard /></Layout>} />
-                <Route path="/vendor/profile" element={<Layout><VendorProfile /></Layout>} />
-              </Route>
+                <Route
+                    path="/vendor"
+                    element={<Layout><VendorDashboard /></Layout>}
+                />
+
+                <Route
+                    path="/vendor/profile"
+                    element={<Layout><VendorProfile /></Layout>}
+                />
+
+                <Route
+                    path="/vendor/returns"
+                    element={<Layout><VendorReturnManagement /></Layout>}
+                />
+            </Route>
 
               {/* Admin Routes */}
               <Route element={<RoleRoute role="ADMIN" />}>
