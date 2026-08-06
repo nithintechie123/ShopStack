@@ -91,6 +91,13 @@ export default function AdminDashboard() {
               <BarChart3 size={16} className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 text-white" />
               <span>Reports</span>
             </Link>
+            <Link
+              to="/admin/warehouses"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-200/30 hover:shadow-lg hover:shadow-emerald-300/30 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-98"
+            >
+              <Package size={16} className="text-white" />
+              <span>Warehouses</span>
+            </Link>
           </div>
         </div>
 
