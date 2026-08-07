@@ -71,6 +71,26 @@ public class AdminController {
         }
     }
 
+    @PutMapping("/vendors/{id}/commission")
+    public ResponseEntity<?> updateVendorCommission(
+            @PathVariable("id") UUID id,
+            @RequestBody Map<String, Object> request) {
+        try {
+            if (!request.containsKey("commissionRate")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "commissionRate is required"));
+            }
+            Object rateObj = request.get("commissionRate");
+            if (rateObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "commissionRate cannot be null"));
+            }
+            BigDecimal commissionRate = new BigDecimal(rateObj.toString());
+            VendorProfile updated = profileService.updateVendorCommission(id, commissionRate);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/customers/count")
     public ResponseEntity<Long> getCustomerCount(){
         return ResponseEntity.ok(profileService.getCustomerCount());

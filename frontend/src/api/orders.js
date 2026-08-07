@@ -24,9 +24,23 @@ export const updateOrderStatus = (id, status) =>
 export const getVendorOrders = () =>
   api.get('/api/vendor/orders');
 
+// Vendor: Get vendor earnings summary (Total sales, Commission deducted, Final payout)
+export const getVendorEarningsSummary = () =>
+  api.get('/api/vendor/earnings-summary');
+
 // Admin: Get all platform orders
 export const getAdminOrders = () =>
   api.get('/api/admin/orders');
+
+// Admin reports
+export const getAdminDashboardStats = () =>
+  api.get('/api/admin/dashboard');
+
+export const getCommissionSummary = () =>
+  api.get('/api/admin/commission');
+
+export const getVendorEarnings = () =>
+  api.get('/api/admin/vendor-earnings');
 
 // Validate Coupon Code
 export const validateCoupon = (code) =>

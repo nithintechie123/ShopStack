@@ -124,6 +124,17 @@ public class OrderController {
         }
     }
 
+    @GetMapping({"/api/vendor/earnings-summary", "/api/vendor/earnings"})
+    public ResponseEntity<?> getVendorEarningsSummary() {
+        try {
+            User user = getCurrentUser();
+            var summary = orderService.getVendorEarningsSummary(user);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/api/admin/orders")
     public ResponseEntity<?> getAdminOrders() {
         try {

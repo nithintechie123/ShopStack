@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getVendorProducts, createProduct, updateProduct, deleteProduct, submitProductForApproval, getCategories } from '../../api/products';
 import { getVendorProfile } from '../../api/vendors';
-import { getVendorOrders, updateOrderStatus } from '../../api/orders';
+import { getVendorOrders, getVendorEarningsSummary, updateOrderStatus } from '../../api/orders';
 import { uploadProductImage } from '../../api/upload';
-import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2 } from 'lucide-react';
+import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2, DollarSign, TrendingUp, Percent, Wallet } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
 import InventoryManager from '../../components/inventory/InventoryManager';
 
@@ -69,6 +69,7 @@ export default function VendorDashboard() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [vendorOrders, setVendorOrders] = useState([]);
+  const [earningsSummary, setEarningsSummary] = useState(null);
   const [categories, setCategories] = useState([]);
   const [vendorProfile, setVendorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,10 @@ export default function VendorDashboard() {
     getVendorOrders()
       .then((res) => { if (active) setVendorOrders(res.data); })
       .catch((err) => console.error("Failed to load vendor orders:", err));
+
+    getVendorEarningsSummary()
+      .then((res) => { if (active) setEarningsSummary(res.data); })
+      .catch((err) => console.error("Failed to load vendor earnings summary:", err));
 
     return () => { active = false; };
   }, []);
@@ -219,12 +224,15 @@ export default function VendorDashboard() {
           <div>
             <h1 className="gradient-text text-3xl font-extrabold tracking-tight">Vendor Dashboard</h1>
             {vendorProfile && (
-              <p className="text-sm text-text-secondary flex items-center gap-2 mt-1.5">
+              <p className="text-sm text-text-secondary flex items-center flex-wrap gap-2 mt-1.5">
                 <span className="font-semibold text-text-primary">{vendorProfile.storeName}</span>
                 <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                   vendorProfile.status === 'APPROVED' ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' : 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning'
                 }`}>
                   {vendorProfile.status}
+                </span>
+                <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-emerald-500/10 border-emerald-500/30 text-emerald-600">
+                  {((vendorProfile.commissionRate != null ? vendorProfile.commissionRate : 0.10) * 100).toFixed(0)}% Commission Profit Rate
                 </span>
               </p>
             )}
@@ -245,25 +253,74 @@ export default function VendorDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          {[
-            { icon: Package,    label: 'Total Products',  value: products.length,   bg: 'bg-accent-primary/10 text-accent-primary', subtext: 'In your catalog' },
-            { icon: ShoppingBag,label: 'Customer Orders', value: vendorOrders.length,bg: 'bg-accent-secondary/10 text-accent-secondary', subtext: 'Received orders' },
-            { icon: Clock,      label: 'Pending Review',  value: pending,           bg: 'bg-accent-warning/10 text-accent-warning', subtext: 'Awaiting admin' },
-            { icon: IndianRupee, label: 'Inventory Value', value: `₹${totalVal.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, bg: 'bg-purple-500/10 text-purple-600', subtext: 'Total (Price × Stock)' },
-          ].map(({ icon: Icon, label, value, bg, subtext }) => (
-            <div key={label} className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>
-                <Icon size={20} />
-              </div>
-              <div>
-                <p className="font-display text-2xl font-extrabold text-text-primary leading-none">{value}</p>
-                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">{label}</p>
-                {subtext && <p className="text-[9px] font-medium text-text-secondary mt-1 opacity-80">{subtext}</p>}
+        {(() => {
+          const totalSales = Number(earningsSummary?.totalSales ?? vendorOrders.reduce((sum, o) => sum + Number(o.vendorAmount || 0), 0));
+          const totalCommission = Number(earningsSummary?.totalCommission ?? vendorOrders.reduce((sum, o) => sum + Number(o.commissionDeducted || (Number(o.vendorAmount || 0) * (o.commissionRate || 0.10))), 0));
+          const completedOrdersCount = earningsSummary?.completedOrders ?? vendorOrders.filter(o => (o.trackingStatus || '').toUpperCase() !== 'CANCELLED').length;
+          const commRatePct = earningsSummary?.commissionRate != null ? `${(Number(earningsSummary.commissionRate) * 100).toFixed(0)}%` : (vendorProfile?.commissionRate != null ? `${(Number(vendorProfile.commissionRate) * 100).toFixed(0)}%` : '10%');
+
+          return (
+            <div className="flex flex-col gap-6 mb-10">
+              {/* Financial Metrics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+                <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-accent-primary/10 text-accent-primary">
+                    <DollarSign size={20} />
+                  </div>
+                  <div>
+                    <p className="font-display text-2xl font-extrabold text-text-primary leading-none">₹{totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">Total Sales (GMV)</p>
+                    <p className="text-[9px] font-medium text-text-secondary mt-1 opacity-80">Gross customer orders</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 backdrop-blur-md shadow-lg shadow-emerald-500/5">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-emerald-500/20 text-emerald-600">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div>
+                    <p className="font-display text-2xl font-extrabold text-emerald-600 leading-none">+₹{totalCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mt-1">Commission Profit</p>
+                    <p className="text-[9px] font-medium text-emerald-600/90 mt-1">{commRatePct} Profit on Sales</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-accent-secondary/10 text-accent-secondary">
+                    <ShoppingBag size={20} />
+                  </div>
+                  <div>
+                    <p className="font-display text-2xl font-extrabold text-text-primary leading-none">{completedOrdersCount}</p>
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">Completed Orders</p>
+                    <p className="text-[9px] font-medium text-text-secondary mt-1 opacity-80">Fulfilled checkouts</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-600">
+                    <Package size={20} />
+                  </div>
+                  <div>
+                    <p className="font-display text-2xl font-extrabold text-text-primary leading-none">{products.length}</p>
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">Total Products</p>
+                    <p className="text-[9px] font-medium text-text-secondary mt-1 opacity-80">Catalog items</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-indigo-500/10 text-indigo-600">
+                    <Percent size={20} />
+                  </div>
+                  <div>
+                    <p className="font-display text-2xl font-extrabold text-indigo-600 leading-none">{commRatePct}</p>
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mt-1">Commission Rate</p>
+                    <p className="text-[9px] font-medium text-text-secondary mt-1 opacity-80">Agreed profit margin</p>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })()}
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-glass-border mb-6">
@@ -582,26 +639,57 @@ export default function VendorDashboard() {
                         </div>
                       </div>
 
-                      {/* Items */}
-                      <div className="p-6 flex flex-col gap-3">
-                        {(order.items || order.orderItems || []).map((item, idx) => (
-                          <div key={item.id || idx} className="flex items-center justify-between gap-4 text-xs pb-3 last:pb-0 border-b border-glass-border/20 last:border-b-0">
-                            <div className="flex items-center gap-3">
-                              <Package size={16} className="text-accent-primary shrink-0" />
-                              <div>
-                                <span className="font-bold text-text-primary">{item.product?.name || item.productName || 'Item'}</span>
-                                <span className="text-[11px] text-text-muted ml-2">Qty {item.quantity}</span>
-                              </div>
+                      {/* Order Financial Breakdown & Items */}
+                      <div className="p-6 flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-lg bg-bg-tertiary/30 border border-glass-border/40 text-xs">
+                          <div className="flex items-center gap-6">
+                            <div>
+                              <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">Gross Sales</span>
+                              <span className="font-bold text-text-primary">₹{Number(order.vendorAmount || 0).toFixed(2)}</span>
                             </div>
-                            <span className="font-bold text-text-primary">₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</span>
+                            <div>
+                              <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Commission Rate</span>
+                              <span className="font-bold text-emerald-600">{((order.commissionRate || 0.10) * 100).toFixed(0)}% Profit</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Commission Profit (Earnings)</span>
+                              <span className="font-bold text-emerald-600 text-sm">+₹{Number(order.commissionDeducted || (Number(order.vendorAmount || 0) * (order.commissionRate || 0.10))).toFixed(2)}</span>
+                            </div>
                           </div>
-                        ))}
+                          <span className="text-[10px] text-text-muted">Settlement automated upon order completion</span>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {(order.items || order.orderItems || []).map((item, idx) => {
+                            const itemPrice = parseFloat(item.price || 0);
+                            const itemGross = itemPrice * item.quantity;
+                            const itemComm = item.commissionDeducted != null ? parseFloat(item.commissionDeducted) : itemGross * (order.commissionRate || 0.10);
+
+                            return (
+                              <div key={item.id || idx} className="flex items-center justify-between gap-4 text-xs pb-3 last:pb-0 border-b border-glass-border/20 last:border-b-0">
+                                <div className="flex items-center gap-3">
+                                  <Package size={16} className="text-accent-primary shrink-0" />
+                                  <div>
+                                    <span className="font-bold text-text-primary">{item.product?.name || item.productName || 'Item'}</span>
+                                    <span className="text-[11px] text-text-muted ml-2">Qty {item.quantity} × ₹{itemPrice.toFixed(2)}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 text-right">
+                                  <div>
+                                    <div className="font-bold text-text-primary">₹{itemGross.toFixed(2)}</div>
+                                    <div className="text-[10px] font-bold text-emerald-600">Profit: +₹{itemComm.toFixed(2)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* Shipping info */}
                       <div className="px-6 py-3 bg-bg-tertiary/20 border-t border-glass-border/30 text-[11px] text-text-secondary flex items-center gap-2">
                         <Truck size={14} className="text-accent-primary shrink-0" />
-                        <span>Shipping Address: <strong className="text-text-primary">{order.shippingAddress}</strong></span>
+                        <span>Shipping Address: <strong className="text-text-primary">{order.shippingAddress || 'Not provided'}</strong></span>
                       </div>
 
                       {/* Expanded View */}
