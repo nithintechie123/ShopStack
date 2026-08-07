@@ -70,9 +70,37 @@ public class ProfileService {
         
         profile.setStatus(status);
         if (commissionRate != null) {
-            profile.setCommissionRate(commissionRate);
+            profile.setCommissionRate(validateAndNormalizeRate(commissionRate));
         }
         return vendorProfileRepository.save(profile);
+    }
+
+    @Transactional
+    public VendorProfile updateVendorCommission(UUID vendorProfileId, BigDecimal commissionRate) {
+        VendorProfile profile = vendorProfileRepository.findById(vendorProfileId)
+                .orElseThrow(() -> new IllegalArgumentException("Vendor profile not found with ID: " + vendorProfileId));
+        
+        if (commissionRate == null) {
+            throw new IllegalArgumentException("Commission rate cannot be null");
+        }
+        
+        profile.setCommissionRate(validateAndNormalizeRate(commissionRate));
+        return vendorProfileRepository.save(profile);
+    }
+
+    private BigDecimal validateAndNormalizeRate(BigDecimal rate) {
+        if (rate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Commission rate cannot be negative");
+        }
+        // If rate is provided as percentage (e.g. 10 or 15 instead of 0.10 or 0.15)
+        if (rate.compareTo(BigDecimal.ONE) > 0) {
+            if (rate.compareTo(BigDecimal.valueOf(100)) <= 0) {
+                rate = rate.divide(BigDecimal.valueOf(100), 4, java.math.RoundingMode.HALF_UP);
+            } else {
+                throw new IllegalArgumentException("Commission rate cannot exceed 100%");
+            }
+        }
+        return rate.setScale(4, java.math.RoundingMode.HALF_UP);
     }
 
     public List<VendorProfile> getVendorsByStatus(VendorStatus status) {

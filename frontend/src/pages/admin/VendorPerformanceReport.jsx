@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAdminOrders } from '../../api/orders';
+import { getVendorEarnings } from '../../api/orders';
 import { getAllVendors } from '../../api/vendors';
 import ReportHeader from '../../components/admin/ReportHeader';
 import { printElement, downloadCSV } from '../../utils/exportUtils';
@@ -42,7 +42,7 @@ function CustomChartTooltip({ active, payload, label, prefix = '', suffix = '' }
 }
 
 export default function VendorPerformanceReport() {
-  const [orders, setOrders] = useState([]);
+  const [vendorEarnings, setVendorEarnings] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('7days');
@@ -50,144 +50,78 @@ export default function VendorPerformanceReport() {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [vendorFilter, setVendorFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([getAdminOrders(), getAllVendors()])
-      .then(([ordersRes, vendorsRes]) => {
-        setOrders(ordersRes.data || []);
+    Promise.all([getVendorEarnings(), getAllVendors()])
+      .then(([earningsRes, vendorsRes]) => {
+        setVendorEarnings(earningsRes.data || []);
         setVendors(vendorsRes.data || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredOrders = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now);
-
-    if (activeFilter === 'custom') {
-      if (!startDate || !endDate) return orders;
-      const s = new Date(startDate);
-      s.setHours(0, 0, 0, 0);
-      const e = new Date(endDate);
-      e.setHours(23, 59, 59, 999);
-      return orders.filter((order) => {
-        const orderDate = new Date(order.orderDate || order.createdAt || Date.now());
-        return orderDate >= s && orderDate <= e;
-      });
-    }
-
-    switch (activeFilter) {
-      case 'today':
-        start.setDate(now.getDate() - 1);
-        break;
-      case '7days':
-        start.setDate(now.getDate() - 7);
-        break;
-      case 'lastmonth':
-        start.setMonth(now.getMonth() - 1);
-        break;
-      case '6months':
-        start.setMonth(now.getMonth() - 6);
-        break;
-      default:
-        start.setDate(now.getDate() - 7);
-    }
-    return orders.filter((order) => {
-      const orderDate = new Date(order.orderDate || order.createdAt || Date.now());
-      return orderDate >= start && orderDate <= now;
-    });
-  }, [activeFilter, orders, startDate, endDate]);
-
   const computed = useMemo(() => {
-    const vendorsByName = new Map();
-    const categorySet = new Set();
-
-    filteredOrders.forEach((order) => {
-      const items = order.items || order.orderItems || [];
-      items.forEach((item) => {
-        const vendorName = item.product?.vendor?.storeName || item.vendor?.storeName || 'Unknown Vendor';
-        const category = item.product?.category?.name || item.category?.name || 'Uncategorized';
-        const price = parseFloat(item.price || item.unitPrice || item.product?.price || 0) || 0;
-        const qty = parseInt(item.quantity || 0, 10) || 0;
-        const revenue = price * qty;
-
-        categorySet.add(category);
-        const vendor = vendorsByName.get(vendorName) || {
-          vendorName,
-          revenue: 0,
-          orders: 0,
-          productsSold: 0,
-          productNames: new Set(),
-          rating: item.product?.vendor?.rating || item.rating || 4.3,
-          status: friendlyStatus(item.product?.vendor?.status || item.status),
-        };
-        vendor.revenue += revenue;
-        vendor.productsSold += qty;
-        if (qty) vendor.productNames.add(item.product?.name || item.productName || 'Unknown Product');
-        vendorsByName.set(vendorName, vendor);
-      });
-    });
-
-    filteredOrders.forEach((order) => {
-      const vendorNames = new Set((order.items || order.orderItems || []).map((item) => item.product?.vendor?.storeName || item.vendor?.storeName || 'Unknown Vendor'));
-      vendorNames.forEach((name) => {
-        const current = vendorsByName.get(name);
-        if (current) {
-          current.orders += 1;
-        }
-      });
-    });
-
-    const enrichedVendors = Array.from(vendorsByName.values()).map((vendor) => ({
-      ...vendor,
-      productsListed: vendor.productNames.size,
-      rating: Number(vendor.rating) || 4.2,
+    const rows = vendorEarnings.map((vendor) => ({
+      vendorName: vendor.vendorName || 'Unknown Vendor',
+      status: vendor.status || 'UNKNOWN',
+      totalSales: Number(vendor.totalSales || 0),
+      totalCommission: Number(vendor.totalCommission || 0),
+      totalPayout: Number(vendor.totalPayout || 0),
+      completedOrders: vendor.completedOrders || 0,
+      commissionRate: Number(vendor.commissionRate || 0),
     }));
 
-    const filteredByStatus = statusFilter === 'all' ? enrichedVendors : enrichedVendors.filter((vendor) => vendor.status.toLowerCase() === statusFilter);
-    const filteredByVendor = vendorFilter === 'all' ? filteredByStatus : filteredByStatus.filter((vendor) => vendor.vendorName === vendorFilter);
-    const filteredByCategory = categoryFilter === 'all' ? filteredByVendor : filteredByVendor;
+    const filteredByStatus = statusFilter === 'all'
+      ? rows
+      : rows.filter((vendor) => vendor.status.toLowerCase() === statusFilter);
 
-    const sortedVendors = [...filteredByCategory].sort((a, b) => b.revenue - a.revenue);
-    const totalRevenue = sortedVendors.reduce((sum, item) => sum + item.revenue, 0);
+    const filteredByVendor = vendorFilter === 'all'
+      ? filteredByStatus
+      : filteredByStatus.filter((vendor) => vendor.vendorName === vendorFilter);
+
+    const sortedVendors = [...filteredByVendor].sort((a, b) => b.totalSales - a.totalSales);
+    const totalSales = sortedVendors.reduce((sum, item) => sum + item.totalSales, 0);
+    const totalPayout = sortedVendors.reduce((sum, item) => sum + item.totalPayout, 0);
+    const totalCommission = sortedVendors.reduce((sum, item) => sum + item.totalCommission, 0);
     const totalVendors = vendors.length;
     const activeVendors = vendors.filter((vendor) => friendlyStatus(vendor.status) === 'Active').length;
-    const avgRating = totalVendors === 0 ? 0 : Number((vendors.reduce((sum, vendor) => sum + (Number(vendor.rating) || 4.2), 0) / totalVendors).toFixed(1));
+    const avgCommissionRate = sortedVendors.length === 0 ? 0 : sortedVendors.reduce((sum, item) => sum + item.commissionRate, 0) / sortedVendors.length;
 
     const rankTable = sortedVendors.map((vendor, idx) => ({
       id: idx,
       vendorName: vendor.vendorName,
-      productsListed: vendor.productsListed,
-      productsSold: vendor.productsSold,
-      orders: vendor.orders,
-      revenue: formatCurrency(vendor.revenue),
-      rating: vendor.rating.toFixed(1),
+      totalSales: vendor.totalSales,
+      totalCommission: vendor.totalCommission,
+      totalPayout: vendor.totalPayout,
+      completedOrders: vendor.completedOrders,
+      commissionRate: `${(vendor.commissionRate * 100).toFixed(1)}%`,
       status: vendor.status,
     }));
 
-    const revenueChartData = sortedVendors.slice(0, 10).map((vendor) => ({ name: vendor.vendorName, revenue: Math.round(vendor.revenue) }));
-    const orderDistribution = sortedVendors.slice(0, 8).map((vendor) => ({ name: vendor.vendorName, value: vendor.orders }));
+    const revenueChartData = sortedVendors.slice(0, 10).map((vendor) => ({ name: vendor.vendorName, revenue: Math.round(vendor.totalPayout) }));
+    const orderDistribution = sortedVendors.slice(0, 8).map((vendor) => ({ name: vendor.vendorName, value: vendor.completedOrders }));
     const bestVendor = sortedVendors[0] || null;
     const worstVendor = sortedVendors[sortedVendors.length - 1] || null;
 
     return {
-      totalRevenue,
+      totalSales,
+      totalCommission,
+      totalPayout,
       totalVendors,
       activeVendors,
-      avgRating,
+      avgCommissionRate,
       rankTable,
       revenueChartData,
       orderDistribution,
       bestVendor,
       worstVendor,
-      categories: Array.from(categorySet),
+      vendorOptions: ['all', ...new Set(rows.map((vendor) => vendor.vendorName))],
     };
-  }, [filteredOrders, vendors, statusFilter, vendorFilter, categoryFilter]);
+  }, [vendorEarnings, vendors, statusFilter, vendorFilter]);
 
-  const vendorOptions = useMemo(() => ['all', ...new Set(computed.rankTable.map((row) => row.vendorName))], [computed.rankTable]);
+  const vendorOptions = computed.vendorOptions || ['all'];
   const statusOptions = ['all', 'Active', 'Inactive'];
 
   return (
@@ -210,8 +144,8 @@ export default function VendorPerformanceReport() {
           onExportPDF={() => printElement(document.querySelector('.max-w-7xl'), 'Vendor Performance')}
           onPrint={() => printElement(document.querySelector('.max-w-7xl'), 'Vendor Performance')}
           onExportExcel={() => {
-            const rows = computed.rankTable.map((r) => ({ Vendor: r.vendorName, ProductsListed: r.productsListed, ProductsSold: r.productsSold, Orders: r.orders, Revenue: r.revenue, Rating: r.rating, Status: r.status }));
-            downloadCSV('vendor-performance.csv', rows, ['Vendor', 'ProductsListed', 'ProductsSold', 'Orders', 'Revenue', 'Rating', 'Status']);
+            const rows = computed.rankTable.map((r) => ({ Vendor: r.vendorName, Status: r.status, Orders: r.completedOrders, TotalSales: r.totalSales, Commission: r.totalCommission, Payout: r.totalPayout, CommissionRate: r.commissionRate }));
+            downloadCSV('vendor-performance.csv', rows, ['Vendor', 'Status', 'Orders', 'TotalSales', 'Commission', 'Payout', 'CommissionRate']);
           }}
           startDate={startDate}
           endDate={endDate}
@@ -237,26 +171,18 @@ export default function VendorPerformanceReport() {
               ))}
             </select>
           </div>
-          <div className="glass rounded-[24px] p-5 flex flex-col gap-2">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Filter by Category</label>
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full bg-slate-100 border border-slate-200/50 rounded-xl px-3 py-2 text-xs font-semibold text-text-secondary outline-none focus:border-violet-500 focus:bg-white transition-colors cursor-pointer">
-              <option value="all">All Categories</option>
-              {computed.categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {loading ? (
           <ReportSkeleton />
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-              <SummaryCard icon={Store} title="Total Vendors" value={computed.totalVendors} detail="Registered stores" />
-              <SummaryCard icon={Award} title="Active Vendors" value={computed.activeVendors} detail="Currently live sellers" />
-              <SummaryCard icon={DollarSign} title="Total Revenue" value={formatCurrency(computed.totalRevenue)} detail="Cumulative vendor GMV" />
-              <SummaryCard icon={Star} title="Avg. Rating" value={`${computed.avgRating.toFixed(1)} / 5.0`} detail="Mean merchant feedback" />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8">
+              <SummaryCard icon={DollarSign} title="Total Sales (GMV)" value={formatCurrency(computed.totalSales)} detail="Gross customer sales" />
+              <SummaryCard icon={DollarSign} title="Commission Deducted" value={formatCurrency(computed.totalCommission)} detail="Platform revenue earned" />
+              <SummaryCard icon={DollarSign} title="Final Payout" value={formatCurrency(computed.totalPayout)} detail="Vendor take-home payout" />
+              <SummaryCard icon={Store} title="Active Vendors" value={`${computed.activeVendors} / ${computed.totalVendors}`} detail="Registered stores" />
+              <SummaryCard icon={Award} title="Completed Orders" value={computed.rankTable.reduce((s, r) => s + (r.completedOrders || 0), 0)} detail="Fulfillment orders" />
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-8">
@@ -334,11 +260,11 @@ export default function VendorPerformanceReport() {
                     <thead className="bg-slate-50 text-[11px] font-bold text-text-muted uppercase tracking-wider">
                       <tr>
                         <th className="px-6 py-4">Vendor Name</th>
-                        <th className="px-6 py-4">Products Listed</th>
-                        <th className="px-6 py-4">Products Sold</th>
                         <th className="px-6 py-4">Orders</th>
-                        <th className="px-6 py-4">Revenue</th>
-                        <th className="px-6 py-4">Avg Rating</th>
+                        <th className="px-6 py-4">Total Sales</th>
+                        <th className="px-6 py-4">Commission</th>
+                        <th className="px-6 py-4">Payout</th>
+                        <th className="px-6 py-4">Commission Rate</th>
                         <th className="px-6 py-4">Status</th>
                       </tr>
                     </thead>
@@ -346,11 +272,11 @@ export default function VendorPerformanceReport() {
                       {computed.rankTable.map((row) => (
                         <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 font-bold text-text-primary">{row.vendorName}</td>
-                          <td className="px-6 py-4">{row.productsListed}</td>
-                          <td className="px-6 py-4">{row.productsSold}</td>
-                          <td className="px-6 py-4">{row.orders}</td>
-                          <td className="px-6 py-4 font-bold text-violet-600">{row.revenue}</td>
-                          <td className="px-6 py-4 flex items-center gap-1 text-amber-600 font-bold">★ {row.rating}</td>
+                          <td className="px-6 py-4">{row.completedOrders}</td>
+                          <td className="px-6 py-4 font-bold text-violet-600">{formatCurrency(row.totalSales)}</td>
+                          <td className="px-6 py-4 text-rose-600">{formatCurrency(row.totalCommission)}</td>
+                          <td className="px-6 py-4 text-emerald-600">{formatCurrency(row.totalPayout)}</td>
+                          <td className="px-6 py-4">{row.commissionRate}</td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                               row.status === 'Active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-500'
@@ -387,20 +313,20 @@ export default function VendorPerformanceReport() {
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-2 text-sm">
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total GMV</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(computed.bestVendor.revenue)}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Sales</div>
+                        <div className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(computed.bestVendor.totalSales)}</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Fulfillments</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.bestVendor.orders} orders</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Completed Orders</div>
+                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.bestVendor.completedOrders} orders</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Physical Items Sold</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.bestVendor.productsSold} units</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Payout</div>
+                        <div className="text-sm font-bold text-emerald-600 mt-0.5">{formatCurrency(computed.bestVendor.totalPayout)}</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Store Quality</div>
-                        <div className="text-sm font-bold text-amber-600 mt-0.5">★ {computed.bestVendor.rating.toFixed(1)} score</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Commission Rate</div>
+                        <div className="text-sm font-bold text-amber-600 mt-0.5">{computed.bestVendor.commissionRate}</div>
                       </div>
                     </div>
                   </div>
@@ -427,20 +353,20 @@ export default function VendorPerformanceReport() {
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-2 text-sm">
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total GMV</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(computed.worstVendor.revenue)}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Sales</div>
+                        <div className="text-sm font-bold text-text-primary mt-0.5">{formatCurrency(computed.worstVendor.totalSales)}</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Fulfillments</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.worstVendor.orders} orders</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Completed Orders</div>
+                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.worstVendor.completedOrders} orders</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Physical Items Sold</div>
-                        <div className="text-sm font-bold text-text-primary mt-0.5">{computed.worstVendor.productsSold} units</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total Payout</div>
+                        <div className="text-sm font-bold text-emerald-600 mt-0.5">{formatCurrency(computed.worstVendor.totalPayout)}</div>
                       </div>
                       <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Store Quality</div>
-                        <div className="text-sm font-bold text-amber-600 mt-0.5">★ {computed.worstVendor.rating.toFixed(1)} score</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Commission Rate</div>
+                        <div className="text-sm font-bold text-amber-600 mt-0.5">{computed.worstVendor.commissionRate}</div>
                       </div>
                     </div>
                   </div>

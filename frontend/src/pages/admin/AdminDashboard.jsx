@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
-import { getAdminOrders, updateOrderStatus } from '../../api/orders';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3, Ticket } from 'lucide-react';
+import { getAdminOrders, getAdminDashboardStats, updateOrderStatus } from '../../api/orders';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3, Ticket, DollarSign, Percent } from 'lucide-react';
 import DashboardCards from '../../components/admin/DashboardCards';
 import OrderTracker from '../../components/orders/OrderTracker';
 import { Link } from 'react-router-dom';
 import InventoryManager from '../../components/inventory/InventoryManager';
 import CouponManagement from '../../components/admin/CouponManagement';
+import CommissionManagement from '../../components/admin/CommissionManagement';
 
 export default function AdminDashboard() {
   const [customerCount, setCustomerCount] = useState(0);
@@ -16,6 +17,7 @@ export default function AdminDashboard() {
   const [allProducts, setAllProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [adminOrders, setAdminOrders] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -27,17 +29,19 @@ export default function AdminDashboard() {
       getCustomerCount(),
       getAllCustomers(),
       searchProducts({}),
-      getAdminOrders()
+      getAdminOrders(),
+      getAdminDashboardStats()
     ])
-      .then(([vRes, pRes, ccRes, cRes, prodRes, oRes]) => {   
+      .then(([vRes, pRes, ccRes, cRes, prodRes, oRes, statsRes]) => {
         setCustomers(cRes.data);
         setVendors(vRes.data);
         setPendingProducts(pRes.data);
         setCustomerCount(ccRes.data);
         setAllProducts(prodRes.data || []);
         setAdminOrders(oRes.data || []);
+        setDashboardStats(statsRes.data || {});
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -69,7 +73,7 @@ export default function AdminDashboard() {
   };
 
   const approved = vendors.filter((v) => v.status === 'APPROVED').length;
-  const pending  = vendors.filter((v) => v.status === 'PENDING_APPROVAL').length;
+  const pending = vendors.filter((v) => v.status === 'PENDING_APPROVAL').length;
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-10 pb-20">
@@ -106,19 +110,56 @@ export default function AdminDashboard() {
           cards={[
             { icon: Users, label: 'Total Users', value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary' },
             { icon: Store, label: 'Total Vendors', value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
-            { icon: Truck, label: 'Platform Orders', value: adminOrders.length, bg: 'bg-accent-secondary/10 text-accent-secondary' },
-            { icon: Package, label: 'Pending Products', value: pendingProducts.length, bg: 'bg-purple-500/10 text-purple-600' },
+            { icon: DollarSign, label: 'Total Sales (GMV)', value: dashboardStats.totalSales ? `₹${Number(dashboardStats.totalSales).toLocaleString()}` : '₹0', bg: 'bg-indigo-500/10 text-indigo-600' },
+            { icon: DollarSign, label: 'Platform Revenue', value: dashboardStats.totalCommission ? `₹${Number(dashboardStats.totalCommission).toLocaleString()}` : '₹0', bg: 'bg-emerald-500/10 text-emerald-600' },
+            { icon: DollarSign, label: 'Vendor Payout', value: dashboardStats.totalPayout ? `₹${Number(dashboardStats.totalPayout).toLocaleString()}` : '₹0', bg: 'bg-violet-500/10 text-violet-600' },
+            { icon: Truck, label: 'Completed Orders', value: dashboardStats.completedOrders || adminOrders.length, bg: 'bg-accent-secondary/10 text-accent-secondary' },
           ]}
         />
+
+        {/* Commission & Platform Revenue Summary Banner */}
+        <div className="rounded-2xl border border-glass-border bg-gradient-to-r from-violet-900/10 via-indigo-900/10 to-emerald-900/10 backdrop-blur-md p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-accent-primary flex items-center gap-1.5">
+              <DollarSign size={14} /> Commission & Revenue Overview
+            </span>
+            <h3 className="text-lg font-bold text-text-primary">Platform Financial Health & Settlement</h3>
+            <p className="text-xs text-text-secondary">
+              Platform earns a standard commission rate on completed merchant sales. Payouts are calculated automatically after deducting commission.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setActiveTab('commission')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-primary hover:bg-accent-primary-hover text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+            >
+              <Percent size={14} />
+              <span>Manage Commission Rates</span>
+            </button>
+            <Link
+              to="/admin/reports/vendor"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+            >
+              <Store size={14} />
+              <span>Vendor Earnings Report</span>
+            </Link>
+            <Link
+              to="/admin/reports/revenue"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary hover:bg-bg-tertiary/80 border border-glass-border text-text-primary font-bold text-xs transition-colors cursor-pointer"
+            >
+              <BarChart3 size={14} />
+              <span>Revenue Analytics</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-glass-border mb-6">
           <button
-            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
-              activeTab === 'users'
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'users'
                 ? 'border-accent-primary text-accent-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+              }`}
             onClick={() => setActiveTab('users')}
           >
             <Users size={15} />
@@ -126,11 +167,10 @@ export default function AdminDashboard() {
             {customerCount > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{customerCount}</span>}
           </button>
           <button
-            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
-              activeTab === 'vendors'
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'vendors'
                 ? 'border-accent-primary text-accent-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+              }`}
             onClick={() => setActiveTab('vendors')}
           >
             <Store size={15} />
@@ -138,11 +178,10 @@ export default function AdminDashboard() {
             {pending > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{pending}</span>}
           </button>
           <button
-            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
-              activeTab === 'products'
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'products'
                 ? 'border-accent-primary text-accent-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+              }`}
             onClick={() => setActiveTab('products')}
           >
             <Package size={15} />
@@ -150,11 +189,10 @@ export default function AdminDashboard() {
             {pendingProducts.length > 0 && <span className="bg-accent-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1">{pendingProducts.length}</span>}
           </button>
           <button
-            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
-              activeTab === 'inventory'
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'inventory'
                 ? 'border-accent-primary text-accent-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+              }`}
             onClick={() => setActiveTab('inventory')}
           >
             <Layers size={15} />
@@ -166,15 +204,24 @@ export default function AdminDashboard() {
             )}
           </button>
           <button
-            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
-              activeTab === 'coupons'
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'coupons'
                 ? 'border-accent-primary text-accent-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
+              }`}
             onClick={() => setActiveTab('coupons')}
           >
             <Ticket size={15} />
             <span>Coupons</span>
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${activeTab === 'commission'
+                ? 'border-accent-primary text-accent-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            onClick={() => setActiveTab('commission')}
+          >
+            <Percent size={15} />
+            <span>Commission & Rates</span>
           </button>
         </div>
 
@@ -207,20 +254,18 @@ export default function AdminDashboard() {
                         {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
-                          (c.isActive !== undefined ? c.isActive : c.active) ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' : 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger'
-                        }`}>
+                        <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${(c.isActive !== undefined ? c.isActive : c.active) ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' : 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger'
+                          }`}>
                           {(c.isActive !== undefined ? c.isActive : c.active) ? 'Active' : 'Suspended'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <button
                           onClick={() => handleToggleUserStatus(c.id)}
-                          className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm ${
-                            (c.isActive !== undefined ? c.isActive : c.active) 
-                              ? 'bg-accent-danger/10 text-accent-danger hover:bg-accent-danger/20' 
+                          className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm ${(c.isActive !== undefined ? c.isActive : c.active)
+                              ? 'bg-accent-danger/10 text-accent-danger hover:bg-accent-danger/20'
                               : 'bg-accent-secondary/10 text-accent-secondary hover:bg-accent-secondary/20'
-                          }`}
+                            }`}
                         >
                           {(c.isActive !== undefined ? c.isActive : c.active) ? 'Suspend' : 'Activate'}
                         </button>
@@ -270,11 +315,10 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-text-secondary">{v.businessLicense || '—'}</td>
                       <td className="px-6 py-4 font-semibold text-text-primary">{(parseFloat(v.commissionRate || 0) * 100).toFixed(0)}%</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
-                          v.status === 'APPROVED' ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' :
-                          v.status === 'REJECTED' ? 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' :
-                          'bg-accent-warning/10 border-accent-warning/20 text-accent-warning'
-                        }`}>
+                        <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${v.status === 'APPROVED' ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' :
+                            v.status === 'REJECTED' ? 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' :
+                              'bg-accent-warning/10 border-accent-warning/20 text-accent-warning'
+                          }`}>
                           {v.status}
                         </span>
                       </td>
@@ -360,32 +404,32 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 text-text-secondary">{p.stockQuantity}</td>
                         <td className="px-6 py-4">
-                        <div className="flex gap-2 flex-wrap">
-                          <button
-                            className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
-                            onClick={() => setSelectedProduct(p)}
-                          >
-                            <Eye size={12} />
-                            <span>Validate</span>
-                          </button>
-                          <button
-                            className="inline-flex items-center gap-1 bg-accent-secondary hover:bg-accent-secondary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
-                            onClick={() => handleProductApproval(p.id, 'APPROVED')}
-                          >
-                            <CheckCircle size={12} />
-                            <span>Approve</span>
-                          </button>
-                          <button
-                            className="inline-flex items-center gap-1 bg-accent-danger hover:opacity-90 text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
-                            onClick={() => handleProductApproval(p.id, 'REJECTED')}
-                          >
-                            <XCircle size={12} />
-                            <span>Reject</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
+                          <div className="flex gap-2 flex-wrap">
+                            <button
+                              className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
+                              onClick={() => setSelectedProduct(p)}
+                            >
+                              <Eye size={12} />
+                              <span>Validate</span>
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-1 bg-accent-secondary hover:bg-accent-secondary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
+                              onClick={() => handleProductApproval(p.id, 'APPROVED')}
+                            >
+                              <CheckCircle size={12} />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-1 bg-accent-danger hover:opacity-90 text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
+                              onClick={() => handleProductApproval(p.id, 'REJECTED')}
+                            >
+                              <XCircle size={12} />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
                   })}
                 </tbody>
               </table>
@@ -409,6 +453,15 @@ export default function AdminDashboard() {
 
         {/* Coupons Tab */}
         {activeTab === 'coupons' && <CouponManagement />}
+
+        {/* Commission Management Tab */}
+        {activeTab === 'commission' && (
+          <CommissionManagement
+            vendors={vendors}
+            setVendors={setVendors}
+            dashboardStats={dashboardStats}
+          />
+        )}
       </div>
 
       {/* Product Validation Modal */}

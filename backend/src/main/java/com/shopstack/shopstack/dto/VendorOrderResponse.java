@@ -25,5 +25,13 @@ public class VendorOrderResponse {
 
     private BigDecimal vendorAmount;
 
+    private BigDecimal commissionRate;
+
+    private BigDecimal commissionDeducted;
+
+    private BigDecimal netPayout;
+
+    private String shippingAddress;
+
     private List<VendorOrderItemResponse> items;
 }
