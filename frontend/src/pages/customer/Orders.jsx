@@ -146,6 +146,7 @@ export default function Orders() {
             </div>
           ) : (
             filteredOrders.map((order) => {
+              console.log(order);
               const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
               const statusMeta = STATUS_META[currentStatus] || STATUS_META.PROCESSING;
               const dateStr = order.orderDate
