@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw } from 'lucide-react';
+import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw, RotateCcw } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { getMyOrders } from '../../api/orders';
 import OrderTracker from '../../components/orders/OrderTracker';
@@ -146,6 +146,7 @@ export default function Orders() {
             </div>
           ) : (
             filteredOrders.map((order) => {
+              console.log(order);
               const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
               const statusMeta = STATUS_META[currentStatus] || STATUS_META.PROCESSING;
               const dateStr = order.orderDate
@@ -196,6 +197,31 @@ export default function Orders() {
                         <Truck size={14} />
                         <span>Track</span>
                       </Link>
+                      {(currentStatus === "PLACED" ||
+                        currentStatus === "DELIVERED") && (
+
+                        order.hasReturnRequest ? (
+
+                          <Link
+                            to={`/refund/${order.id}`}
+                            className="inline-flex items-center gap-1 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <RefreshCw size={14} />
+                            <span>Track Refund</span>
+                          </Link>
+
+                        ) : (
+
+                          <Link
+                            to={`/orders/${order.id}/return`}
+                            className="inline-flex items-center gap-1 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <RotateCcw size={14} />
+                            <span>Request Return</span>
+                          </Link>
+
+                        )
+                      )}
 
                       <button
                         onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
@@ -206,6 +232,7 @@ export default function Orders() {
                       </button>
                     </div>
                   </div>
+
 
                   {/* Items summary preview */}
                   <div className="p-6 flex flex-col gap-4">

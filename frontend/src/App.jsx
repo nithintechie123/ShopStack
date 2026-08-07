@@ -10,6 +10,7 @@ import Home from './pages/home/Home';
 import ProductDetail from './pages/home/ProductDetail'; 
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorProfile from './pages/vendor/VendorProfile';
+import VendorReturnManagement from './pages/vendor/VendorReturnManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProfile from './pages/admin/AdminProfile';
 import Reports from './pages/admin/Reports';
@@ -21,6 +22,8 @@ import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
 import OrderTrackPage from './pages/customer/OrderTrackPage';
+import ReturnRequest from './pages/customer/ReturnRequest';
+import RefundStatus from "./pages/customer/RefundStatus";
 import Wishlist from './pages/customer/Wishlist';
 import Checkout from './pages/customer/Checkout';
 import Cart from './pages/customer/Cart';
@@ -53,9 +56,21 @@ export default function App() {
 
               {/* Vendor Routes */}
               <Route element={<RoleRoute role="VENDOR" />}>
-                <Route path="/vendor" element={<Layout><VendorDashboard /></Layout>} />
-                <Route path="/vendor/profile" element={<Layout><VendorProfile /></Layout>} />
-              </Route>
+                <Route
+                    path="/vendor"
+                    element={<Layout><VendorDashboard /></Layout>}
+                />
+
+                <Route
+                    path="/vendor/profile"
+                    element={<Layout><VendorProfile /></Layout>}
+                />
+
+                <Route
+                    path="/vendor/returns"
+                    element={<Layout><VendorReturnManagement /></Layout>}
+                />
+            </Route>
 
               {/* Admin Routes */}
               <Route element={<RoleRoute role="ADMIN" />}>
@@ -74,6 +89,19 @@ export default function App() {
                 <Route path="/profile" element={<Layout><Profile /></Layout>} />
                 <Route path="/orders" element={<Layout><Orders /></Layout>} />
                 <Route path="/orders/:id/track" element={<Layout><OrderTrackPage /></Layout>} />
+
+                {/* NEW RETURN PAGE */}
+                <Route
+                  path="/orders/:id/return"
+                  element={<Layout><ReturnRequest /></Layout>}
+                />
+
+                {/* REFUND STATUS PAGE */}
+                <Route
+                  path="/refund/:id"
+                  element={<Layout><RefundStatus /></Layout>}
+                />
+
                 <Route path="/wishlist" element={<Layout><Wishlist /></Layout>} />
                 <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
               </Route>

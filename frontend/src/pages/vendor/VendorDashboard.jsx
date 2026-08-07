@@ -7,6 +7,7 @@ import { uploadProductImage } from '../../api/upload';
 import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2 } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
 import InventoryManager from '../../components/inventory/InventoryManager';
+import VendorReturnManagement from "./VendorReturnManagement";
 
 const STATUS_META = {
   DRAFT:            { label: 'Draft',            cls: 'bg-text-secondary/10 border-text-secondary/20 text-text-secondary', Icon: Edit },
@@ -306,6 +307,17 @@ export default function VendorDashboard() {
                 {products.filter(p => p.stockQuantity <= 5).length} alert
               </span>
             )}
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === "returns"
+                ? "border-accent-primary text-accent-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary"
+            }`}
+            onClick={() => setActiveTab("returns")}
+          >
+            <Package size={16} />
+            <span>Returns & Refunds</span>
           </button>
         </div>
 
@@ -637,6 +649,11 @@ export default function VendorDashboard() {
             />
           </div>
         )}
+        {activeTab === "returns" && (
+          <div className="flex flex-col gap-4">
+              <VendorReturnManagement />
+          </div>
+      )}
       </div>
     </div>
   );
