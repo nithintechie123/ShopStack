@@ -44,7 +44,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vendor_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "user"})
     private VendorProfile vendor;

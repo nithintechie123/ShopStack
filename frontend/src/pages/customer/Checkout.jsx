@@ -466,6 +466,11 @@ const finalTotal = Math.max(
                         <Package size={14} className="text-text-muted" />
                       </div>
                       <div className="truncate">
+                        {item.product.vendor?.storeName && (
+                          <span className="text-[9px] text-accent-primary font-bold uppercase tracking-wider block mb-0.5">
+                            {item.product.vendor.storeName}
+                          </span>
+                        )}
                         <span className="font-semibold text-text-primary block truncate">{item.product.name}</span>
                         <span className="text-[10px] text-text-muted">Qty {item.quantity}</span>
                       </div>

@@ -50,6 +50,10 @@ public class Warehouse {
     @Column(nullable = false)
     private String contactNumber;
 
+    @Column(nullable = false, columnDefinition = "integer default 100000")
+    @Builder.Default
+    private Integer capacity = 100000;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WarehouseStatus status;

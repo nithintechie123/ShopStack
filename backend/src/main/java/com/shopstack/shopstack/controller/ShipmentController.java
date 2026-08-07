@@ -93,6 +93,14 @@ public class ShipmentController {
         }
     }
 
-
+    @GetMapping
+    public ResponseEntity<?> getAllShipments() {
+        try {
+            return ResponseEntity.ok(shipmentService.getAllShipments());
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
 
 }

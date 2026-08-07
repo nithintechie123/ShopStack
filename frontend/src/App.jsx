@@ -86,14 +86,16 @@ export default function App() {
               </Route>
 
               <Route path="/warehouse/login" element={<Layout><WarehouseLogin /></Layout>} />
-              <Route path="/warehouse" element={<WarehouseLayout />}>
-                <Route path="dashboard" element={<WarehouseDashboard />} />
-                <Route path="inventory" element={<WarehouseInventory />} />
-                <Route path="receive" element={<WarehouseReceive />} />
-                <Route path="pick-pack" element={<WarehousePickPack />} />
-                <Route path="shipment" element={<WarehouseShipment />} />
-                <Route path="stock-movement" element={<WarehouseStockMovement />} />
-                <Route path="analytics" element={<WarehouseAnalytics />} />
+              <Route element={<RoleRoute role="WAREHOUSE_STAFF" />}>
+                <Route path="/warehouse" element={<WarehouseLayout />}>
+                  <Route path="dashboard" element={<WarehouseDashboard />} />
+                  <Route path="inventory" element={<WarehouseInventory />} />
+                  <Route path="receive" element={<WarehouseReceive />} />
+                  <Route path="pick-pack" element={<WarehousePickPack />} />
+                  <Route path="shipment" element={<WarehouseShipment />} />
+                  <Route path="stock-movement" element={<WarehouseStockMovement />} />
+                  <Route path="analytics" element={<WarehouseAnalytics />} />
+                </Route>
               </Route>
 
               {/* Authenticated Customer Routes */}

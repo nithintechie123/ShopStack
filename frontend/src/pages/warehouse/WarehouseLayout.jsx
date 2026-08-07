@@ -1,14 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import WarehouseSidebar from './WarehouseSidebar';
-import styles from './warehouse.module.css';
 
 export default function WarehouseLayout() {
   return (
-    <div className={styles.shell}>
+    <div className="flex min-h-screen bg-bg-primary text-text-primary">
       <WarehouseSidebar />
-      <div className={styles.pageContainer}>
+      <main className="flex-1 overflow-y-auto px-6 sm:px-8 lg:px-10 py-8">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

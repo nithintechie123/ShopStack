@@ -28,6 +28,7 @@ public class WarehouseService {
     private final WarehouseAllocationRepository warehouseAllocationRepository;
     private final ProductRepository productRepository;
     private final StockMovementService stockMovementService;
+    private final StockMovementRepository stockMovementRepository;
 
     @Transactional
     public String allocateOrder(AllocateOrderRequest request) {
@@ -110,6 +111,7 @@ public class WarehouseService {
                 .pincode(request.getPincode())
                 .managerName(request.getManagerName())
                 .contactNumber(request.getContactNumber())
+                .capacity(request.getCapacity())
                 .status(WarehouseStatus.ACTIVE)
                 .build();
 
@@ -192,6 +194,12 @@ public class WarehouseService {
         return warehouseRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public Warehouse getWarehouseById(UUID warehouseId) {
+        return warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+    }
+
 
     @Transactional
     public Warehouse updateWarehouse(
@@ -209,6 +217,7 @@ public class WarehouseService {
         warehouse.setManagerName(request.getManagerName());
         warehouse.setContactNumber(request.getContactNumber());
         warehouse.setStatus(request.getStatus());
+        warehouse.setCapacity(request.getCapacity());
 
         return warehouseRepository.save(warehouse);
     }
@@ -312,5 +321,33 @@ public class WarehouseService {
         return "Order marked as ready for shipment.";
     }
 
+    @Transactional
+    public String deleteWarehouse(UUID warehouseId) {
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+
+        // Delete associated allocations
+        List<WarehouseAllocation> allocations = warehouseAllocationRepository.findByWarehouse(warehouse);
+        warehouseAllocationRepository.deleteAll(allocations);
+
+        // Delete associated stock movements
+        List<com.shopstack.shopstack.model.StockMovement> movements = stockMovementRepository.findByWarehouse(warehouse);
+        stockMovementRepository.deleteAll(movements);
+
+        // Delete the warehouse entity (associated inventories are cascade deleted)
+        warehouseRepository.delete(warehouse);
+
+        return "Warehouse deleted successfully.";
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getWarehouseOrders() {
+        return orderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WarehouseInventory> getAllInventories() {
+        return warehouseInventoryRepository.findAll();
+    }
 
 }

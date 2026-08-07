@@ -51,7 +51,7 @@ public class Coupon {
     @Column(name = "usage_limit")
     private Integer usageLimit;
 
-    @Column(name = "used_count", nullable = false)
+    @Column(name = "used_count", nullable = false, columnDefinition = "int default 0")
     @Builder.Default
     private int usedCount = 0;
 

@@ -1,26 +1,52 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getWarehouseById, updateWarehouse } from '../../data/warehouseData';
-import styles from '../warehouse/warehouse.module.css';
+import { getWarehouseById, updateWarehouse } from '../../api/warehouse';
+import { Shield } from 'lucide-react';
 
 export default function WarehouseEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const warehouse = getWarehouseById(id);
-    if (!warehouse) return;
-    setForm({ ...warehouse });
+    const loadWarehouse = async () => {
+      try {
+        const res = await getWarehouseById(id);
+        const data = res.data;
+        if (data) {
+          setForm({
+            ...data,
+            status: data.status === 'ACTIVE' ? 'Active' : 'Inactive',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load warehouse', err);
+        setError('Warehouse not found or failed to load.');
+      }
+    };
+    loadWarehouse();
   }, [id]);
 
-  if (!form) {
+  if (!form && !error) {
     return (
-      <div className={styles.pageContainer}>
-        <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Warehouse not found</h1>
-        </div>
+      <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6">
+        <h1 className="text-sm text-text-secondary">Loading warehouse data...</h1>
+      </div>
+    );
+  }
+
+  if (error && !form) {
+    return (
+      <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6">
+        <h1 className="text-lg font-bold text-accent-danger">{error}</h1>
+        <button
+          onClick={() => navigate('/admin/warehouses')}
+          className="mt-4 px-4 py-2 rounded-xl bg-bg-secondary border border-glass-border text-xs font-semibold text-text-primary"
+        >
+          Back to List
+        </button>
       </div>
     );
   }
@@ -30,65 +56,230 @@ export default function WarehouseEdit() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    updateWarehouse(id, form);
-    setSuccess(true);
-    setTimeout(() => navigate('/admin/warehouses'), 900);
+    setError('');
+
+    const payload = {
+      warehouseName: form.warehouseName,
+      address: form.address,
+      city: form.city,
+      state: form.state,
+      pincode: form.pincode,
+      managerName: form.managerName,
+      contactNumber: form.contactNumber,
+      status: form.status === 'Active' ? 'ACTIVE' : 'INACTIVE',
+      capacity: parseInt(form.capacity, 10) || 100000,
+    };
+
+    try {
+      await updateWarehouse(id, payload);
+      setSuccess(true);
+      setError('');
+      setTimeout(() => navigate('/admin/warehouses'), 900);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update warehouse.');
+    }
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.pageHeader}>
-        <div>
-          <h1 className={styles.pageTitle}>Edit Warehouse</h1>
-          <p className={styles.pageSubtitle}>Adjust location details and update warehouse operating status.</p>
-        </div>
+    <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="flex items-center gap-3 gradient-text text-3xl font-extrabold tracking-tight">
+          <Shield size={28} className="text-accent-primary shrink-0" />
+          <span>Edit Warehouse</span>
+        </h1>
+        <p className="text-sm text-text-secondary mt-1.5 font-medium">Adjust location details and update warehouse operating status.</p>
       </div>
 
-      <div className={styles.formCard}>
-        {success && <div className={styles.alertSuccess}>Warehouse updated successfully. Redirecting to the warehouse list…</div>}
+      <div className="rounded-2xl border border-glass-border bg-glass/5 p-6 md:p-8 shadow-sm">
+        {success && (
+          <div className="mb-6 p-4 rounded-xl bg-accent-secondary/10 border border-accent-secondary/20 text-accent-secondary text-sm font-semibold">
+            Warehouse updated successfully. Redirecting to the warehouse list…
+          </div>
+        )}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-sm font-semibold">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className={styles.formGrid}>
-          {[
-            { id: 'warehouseName', label: 'Warehouse Name', type: 'text' },
-            { id: 'warehouseCode', label: 'Warehouse Code', type: 'text' },
-            { id: 'address', label: 'Address', type: 'text', full: true },
-            { id: 'city', label: 'City', type: 'text' },
-            { id: 'state', label: 'State', type: 'text' },
-            { id: 'country', label: 'Country', type: 'text' },
-            { id: 'pincode', label: 'Pincode', type: 'text' },
-            { id: 'capacity', label: 'Capacity', type: 'text' },
-            { id: 'managerName', label: 'Manager Name', type: 'text' },
-            { id: 'managerEmail', label: 'Manager Email', type: 'email' },
-            { id: 'contactNumber', label: 'Contact Number', type: 'text' },
-          ].map((field) => (
-            <div key={field.id} className={`${styles.fieldGroup} ${field.full ? styles.fullWidth : ''}`}>
-              <label htmlFor={field.id} className={styles.label}>{field.label}</label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="warehouseName" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                Warehouse Name
+              </label>
               <input
-                id={field.id}
-                name={field.id}
-                type={field.type}
-                value={form[field.id] || ''}
+                id="warehouseName"
+                name="warehouseName"
+                type="text"
+                value={form.warehouseName}
                 onChange={handleChange}
                 required
-                className={styles.input}
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
               />
             </div>
-          ))}
 
-          <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-            <label htmlFor="status" className={styles.label}>Status</label>
-            <select id="status" name="status" value={form.status} onChange={handleChange} className={styles.select}>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="warehouseCode" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                Warehouse Code
+              </label>
+              <input
+                id="warehouseCode"
+                name="warehouseCode"
+                type="text"
+                value={form.warehouseCode}
+                onChange={handleChange}
+                required
+                disabled
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-bg-secondary text-sm text-text-muted cursor-not-allowed opacity-75"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="address" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+              Street Address
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              value={form.address}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+            />
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="city" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                City
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                value={form.city}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="state" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                State
+              </label>
+              <input
+                id="state"
+                name="state"
+                type="text"
+                value={form.state}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="pincode" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                Pincode
+              </label>
+              <input
+                id="pincode"
+                name="pincode"
+                type="text"
+                value={form.pincode}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="managerName" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                Manager Name
+              </label>
+              <input
+                id="managerName"
+                name="managerName"
+                type="text"
+                value={form.managerName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="contactNumber" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+                Contact Number
+              </label>
+              <input
+                id="contactNumber"
+                name="contactNumber"
+                type="text"
+                value={form.contactNumber}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="capacity" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+              Fulfillment Capacity (units)
+            </label>
+            <input
+              id="capacity"
+              name="capacity"
+              type="number"
+              value={form.capacity || ''}
+              onChange={handleChange}
+              required
+              min="1"
+              className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-glass/5 text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors"
+              placeholder="e.g. 100000"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="status" className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 rounded-xl border border-glass-border bg-bg-secondary text-sm text-text-primary focus:outline-none focus:border-accent-primary transition-colors cursor-pointer"
+            >
               <option value="Active">Active</option>
-              <option value="Maintenance">Maintenance</option>
               <option value="Inactive">Inactive</option>
             </select>
           </div>
 
-          <div className={styles.formActions} style={{ width: '100%' }}>
-            <button type="submit" className={`${styles.actionButton} ${styles.primaryButton}`}>Update Warehouse</button>
-            <button type="button" className={`${styles.actionButton} ${styles.secondaryButton}`} onClick={() => navigate('/admin/warehouses')}>Cancel</button>
+          <div className="pt-4 flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white font-bold text-sm shadow-md shadow-accent-primary/10 hover:shadow-lg hover:shadow-accent-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-98 cursor-pointer"
+            >
+              Update Warehouse
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/warehouses')}
+              className="px-6 py-3 rounded-xl border border-glass-border hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary font-bold text-sm transition-all duration-200 cursor-pointer"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>

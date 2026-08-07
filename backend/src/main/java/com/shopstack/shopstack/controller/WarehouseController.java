@@ -6,8 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.model.WarehouseInventory;
+import com.shopstack.shopstack.model.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -131,6 +130,17 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouses);
     }
 
+    @GetMapping("/{warehouseId}")
+    public ResponseEntity<?> getWarehouseById(@PathVariable UUID warehouseId) {
+        try {
+            Warehouse warehouse = warehouseService.getWarehouseById(warehouseId);
+            return ResponseEntity.ok(warehouse);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @PutMapping("/{warehouseId}")
     public ResponseEntity<?> updateWarehouse(
             @PathVariable UUID warehouseId,
@@ -205,5 +215,37 @@ public class WarehouseController {
         }
     }
 
+    @DeleteMapping("/{warehouseId}")
+    public ResponseEntity<?> deleteWarehouse(@PathVariable UUID warehouseId) {
+        try {
+            String message = warehouseService.deleteWarehouse(warehouseId);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<?> getWarehouseOrders() {
+        try {
+            List<Order> orders = warehouseService.getWarehouseOrders();
+            return ResponseEntity.ok(orders);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/inventory")
+    public ResponseEntity<?> getAllInventories() {
+        try {
+            List<WarehouseInventory> inventories = warehouseService.getAllInventories();
+            return ResponseEntity.ok(inventories);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
 
 }

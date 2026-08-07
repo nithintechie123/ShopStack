@@ -149,4 +149,9 @@ public class ShipmentService {
         };
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<Shipment> getAllShipments() {
+        return shipmentRepository.findAll();
+    }
+
 }
