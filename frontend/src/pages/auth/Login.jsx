@@ -32,9 +32,18 @@ export default function Login() {
     try {
       const user = await login(cleanEmail, form.password);
       switch (user.role) {
-        case 'ADMIN': navigate('/admin'); break;
-        case 'VENDOR': navigate('/vendor'); break;
-        default: navigate('/'); break;
+        case 'ADMIN':
+          navigate('/admin');
+          break;
+        case 'VENDOR':
+          navigate('/vendor');
+          break;
+        case 'WAREHOUSE_STAFF':
+          navigate('/warehouse/dashboard');
+          break;
+        default:
+          navigate('/');
+          break;
       }
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Invalid email or password.';

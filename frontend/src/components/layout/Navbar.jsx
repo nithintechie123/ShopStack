@@ -43,6 +43,7 @@ export default function Navbar() {
     switch (user.role) {
       case 'ADMIN': return '/admin';
       case 'VENDOR': return '/vendor';
+      case 'WAREHOUSE_STAFF': return '/warehouse/dashboard';
       default: return '/dashboard';
     }
   };
