@@ -3,12 +3,14 @@ package com.shopstack.shopstack.service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.shopstack.shopstack.dto.CartItemRequest;
 import com.shopstack.shopstack.dto.CheckoutRequest;
+import com.shopstack.shopstack.dto.OrderResponse;
 import com.shopstack.shopstack.dto.CouponValidationResponse;
 import com.shopstack.shopstack.dto.VendorEarningsDTO;
 import com.shopstack.shopstack.dto.VendorOrderItemResponse;
@@ -22,6 +24,7 @@ import com.shopstack.shopstack.model.VendorProfile;
 import com.shopstack.shopstack.repository.CouponRepository;
 import com.shopstack.shopstack.repository.OrderRepository;
 import com.shopstack.shopstack.repository.ProductRepository;
+import com.shopstack.shopstack.repository.ReturnRequestRepository;
 import com.shopstack.shopstack.repository.VendorProfileRepository;
 import com.shopstack.shopstack.util.CommissionUtils;
 
@@ -35,6 +38,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final CouponRepository couponRepository;
+    private final ReturnRequestRepository returnRequestRepository;
     private final PaymentService paymentService;
     private final CouponService couponService;
     private final VendorProfileRepository vendorProfileRepository;
@@ -172,9 +176,29 @@ public class OrderService {
     }
 
 
-    public List<Order> getOrdersByUser(User user) {
-        return orderRepository.findByUserIdOrderByOrderDateDesc(user.getId());
-    }
+    public List<OrderResponse> getOrdersByUser(User user) {
+
+    return orderRepository.findByUserIdOrderByOrderDateDesc(user.getId())
+            .stream()
+            .map(order -> OrderResponse.builder()
+                    .id(order.getId())
+                    .orderDate(order.getOrderDate())
+                    .subtotal(order.getSubtotal())
+                    .discount(order.getDiscount())
+                    .finalAmount(order.getFinalAmount())
+                    .shippingAddress(order.getShippingAddress())
+                    .billingAddress(order.getBillingAddress())
+                    .paymentMethod(order.getPaymentMethod())
+                    .paymentStatus(order.getPaymentStatus())
+                    .trackingStatus(order.getTrackingStatus())
+                    .transactionId(order.getTransactionId())
+                    .items(order.getItems())
+                    .hasReturnRequest(
+                            returnRequestRepository.findByOrderId(order.getId()).isPresent()
+                    )
+                    .build())
+            .collect(Collectors.toList());
+}
 
     public Order getOrderById(java.util.UUID orderId, User user) {
 

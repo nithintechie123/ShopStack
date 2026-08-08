@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shopstack.shopstack.dto.CheckoutRequest;
+import com.shopstack.shopstack.dto.OrderResponse;
+import com.shopstack.shopstack.dto.VendorOrderResponse;
 import com.shopstack.shopstack.model.Coupon;
 import com.shopstack.shopstack.model.Order;
 import com.shopstack.shopstack.model.User;
@@ -25,8 +27,6 @@ import com.shopstack.shopstack.repository.CouponRepository;
 import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.service.OrderService;
 import com.shopstack.shopstack.service.PaymentService;
-import com.shopstack.shopstack.dto.VendorOrderResponse;
-
 @RestController
 public class OrderController {
 
@@ -78,7 +78,7 @@ public class OrderController {
     public ResponseEntity<?> getMyOrders() {
         try {
             User user = getCurrentUser();
-            List<Order> orders = orderService.getOrdersByUser(user);
+            List<OrderResponse> orders = orderService.getOrdersByUser(user);
             return ResponseEntity.ok(orders);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
