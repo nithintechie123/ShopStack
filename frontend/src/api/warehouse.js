@@ -33,6 +33,9 @@ export const deleteWarehouseInventory = (id) =>
 export const getWarehouseOrders = () =>
   api.get('/api/warehouse/orders');
 
+export const allocateOrder = (data) =>
+  api.post('/api/warehouse/allocate', data);
+
 export const pickOrder = (orderId) =>
   api.put(`/api/warehouse/orders/${orderId}/pick`);
 

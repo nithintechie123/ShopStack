@@ -1,22 +1,40 @@
 import { useEffect, useState } from 'react';
-import { getWarehouseOrders, pickOrder, packOrder, readyForShipment } from '../../api/warehouse';
+import { getWarehouseOrders, getWarehouses, allocateOrder, pickOrder, packOrder, readyForShipment } from '../../api/warehouse';
 import { ArrowRightCircle, CheckCircle, Boxes } from 'lucide-react';
 
 export default function WarehousePickPack() {
   const [orders, setOrders] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [selectedWhs, setSelectedWhs] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchOrders = async () => {
     try {
-      const res = await getWarehouseOrders();
-      // Filter to show only orders relevant to warehouse picking/packing
-      const warehouseStates = ['ALLOCATED', 'PICKED', 'PACKED', 'READY_TO_SHIP'];
-      const filtered = (res.data || []).filter((o) => warehouseStates.includes(o.trackingStatus));
+      const [oRes, wRes] = await Promise.all([
+        getWarehouseOrders(),
+        getWarehouses(),
+      ]);
+      
+      const whList = wRes.data || [];
+      setWarehouses(whList);
+
+      const warehouseStates = ['READY_FOR_WAREHOUSE', 'ALLOCATED', 'PICKED', 'PACKED', 'READY_TO_SHIP'];
+      const filtered = (oRes.data || []).filter((o) => warehouseStates.includes(o.trackingStatus));
       setOrders(filtered);
+
+      // Pre-select first warehouse for ready orders
+      const initialWhs = {};
+      const defaultWhId = whList[0]?.id || '';
+      filtered.forEach((o) => {
+        if (o.trackingStatus === 'READY_FOR_WAREHOUSE') {
+          initialWhs[o.id] = defaultWhId;
+        }
+      });
+      setSelectedWhs((prev) => ({ ...prev, ...initialWhs }));
     } catch (err) {
       console.error('Failed to load orders', err);
-      setError('Failed to load orders.');
+      setError('Failed to load orders or warehouses.');
     } finally {
       setLoading(false);
     }
@@ -25,6 +43,20 @@ export default function WarehousePickPack() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleAllocate = async (orderId) => {
+    const warehouseId = selectedWhs[orderId];
+    if (!warehouseId) {
+      alert('Please select a warehouse.');
+      return;
+    }
+    try {
+      await allocateOrder({ orderId, warehouseId });
+      fetchOrders();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to allocate order');
+    }
+  };
 
   const handlePick = async (orderId) => {
     try {
@@ -56,6 +88,8 @@ export default function WarehousePickPack() {
   const getStatusBadge = (status) => {
     const base = 'inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border';
     switch (status) {
+      case 'READY_FOR_WAREHOUSE':
+        return <span className={`${base} bg-teal-500/10 border-teal-500/20 text-teal-600`}>Ready for Handover</span>;
       case 'ALLOCATED':
         return <span className={`${base} bg-amber-500/10 border-amber-500/20 text-amber-600`}>Allocated</span>;
       case 'PICKED':
@@ -112,7 +146,7 @@ export default function WarehousePickPack() {
                 const itemCount = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
                 return (
                   <tr key={order.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4 font-semibold text-text-primary text-sm">{order.id}</td>
+                    <td className="px-6 py-4 font-semibold text-text-primary text-sm font-mono">#{order.id.substring(0, 8)}...</td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-text-primary">
                         {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Guest Customer'}
@@ -122,6 +156,28 @@ export default function WarehousePickPack() {
                     <td className="px-6 py-4 text-text-secondary font-medium">{itemCount} items</td>
                     <td className="px-6 py-4">{getStatusBadge(order.trackingStatus)}</td>
                     <td className="px-6 py-4 text-right">
+                      {order.trackingStatus === 'READY_FOR_WAREHOUSE' && (
+                        <div className="flex items-center justify-end gap-2">
+                          <select
+                            value={selectedWhs[order.id] || ''}
+                            onChange={(e) => setSelectedWhs((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                            className="rounded-xl border border-glass-border bg-bg-secondary px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent-primary"
+                          >
+                            <option value="">Select Warehouse</option>
+                            {warehouses.map((w) => (
+                              <option key={w.id} value={w.id}>{w.warehouseName}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleAllocate(order.id)}
+                            className="inline-flex items-center gap-1.5 bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm"
+                          >
+                            <ArrowRightCircle size={14} />
+                            <span>Allocate</span>
+                          </button>
+                        </div>
+                      )}
                       {order.trackingStatus === 'ALLOCATED' && (
                         <button
                           type="button"

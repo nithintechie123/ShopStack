@@ -67,10 +67,13 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
       case 'ALLOCATED':
       case 'PICKED':
       case 'PACKED':
+      case 'READY_TO_SHIP':
       case 'READY_FOR_SHIPMENT':
       case 'PROCESSING':
         return 1;
       case 'SHIPPED':
+      case 'DISPATCHED':
+      case 'IN_TRANSIT':
         return 2;
       case 'OUT_FOR_DELIVERY':
         return 3;
