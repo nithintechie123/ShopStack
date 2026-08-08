@@ -121,6 +121,13 @@ Here is the progress we have made so far! All of these features are fully built 
 *   **Safe Database Transactions (Concurrency):** Programmed database locking on product stock to ensure that if a product is popular, we never sell more than we have!
 *   **Mock Payment Processor:** Simulated credit card and bank checking accounts to test orders.
 
+### 🌟 Milestone 3: Fulfillment Integration & Return-Refund Systems
+*   **Warehouse Operations & Fulfillment Pipeline:** Integrated live database-backed warehouse allocations to replace static configurations, featuring active warehouse tracking and storage capacity validation logic.
+*   **Staff Pick, Pack & Dispatch Queue:** Automated fulfillment tracking steps, permitting warehouse personnel to transition orders sequentially (`ALLOCATED` → `PICKED` → `PACKED` → `READY_TO_SHIP`).
+*   **Carrier Shipping Operations:** Wired courier handler bookings, generating unique shipment tracking references and routing events (`DISPATCHED` → `IN_TRANSIT` → `OUT_FOR_DELIVERY` → `DELIVERED`).
+*   **End-to-End Return Claims & Refunds:** Built a customer claim portal (with return reason categories, issue descriptors, image preview uploads, and refund pathways) and a vendor dashboard to evaluate claims, reject with explanations, and issue settlements.
+*   **Admin Reporting Dashboard & Charts**: Implemented custom date-filtered dashboards for Sales, Revenue, Vendor Performance, and Category volumes, with visual charts formatting (Bar/Line/Pie) and spreadsheet exports.
+
 ### 🌟 Extra Polish & Enhancements
 *   **Razorpay Integration:** Full payment gateway integration with payment verification.
 *   **Multi-Tab Session Isolation:** Switched local storage to session storage so you can open multiple roles in different browser tabs at the exact same time without the sessions overlapping!
