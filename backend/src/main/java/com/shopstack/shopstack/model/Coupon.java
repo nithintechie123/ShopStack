@@ -36,8 +36,27 @@ public class Coupon {
     @Column(name = "discount_value", nullable = false)
     private BigDecimal discountValue;
 
-    @Column(name = "expiry_date", nullable = false)
+    @Column(name = "expiry_date", nullable = true)
     private LocalDateTime expiryDate;
+
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
+    @Column(name = "min_order_amount")
+    private BigDecimal minOrderAmount;
+
+    @Column(name = "max_discount_amount")
+    private BigDecimal maxDiscountAmount;
+
+    @Column(name = "usage_limit")
+    private Integer usageLimit;
+
+    @Column(name = "used_count", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int usedCount = 0;
+
+    @Column(length = 500)
+    private String description;
 
     @Column(nullable = false)
     @Builder.Default

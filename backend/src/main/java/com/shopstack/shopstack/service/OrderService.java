@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.shopstack.shopstack.dto.CartItemRequest;
 import com.shopstack.shopstack.dto.CheckoutRequest;
 import com.shopstack.shopstack.dto.OrderResponse;
+import com.shopstack.shopstack.dto.CouponValidationResponse;
+import com.shopstack.shopstack.dto.VendorEarningsDTO;
 import com.shopstack.shopstack.dto.VendorOrderItemResponse;
 import com.shopstack.shopstack.dto.VendorOrderResponse;
 import com.shopstack.shopstack.model.Coupon;
@@ -18,10 +20,13 @@ import com.shopstack.shopstack.model.Order;
 import com.shopstack.shopstack.model.OrderItem;
 import com.shopstack.shopstack.model.Product;
 import com.shopstack.shopstack.model.User;
+import com.shopstack.shopstack.model.VendorProfile;
 import com.shopstack.shopstack.repository.CouponRepository;
 import com.shopstack.shopstack.repository.OrderRepository;
 import com.shopstack.shopstack.repository.ProductRepository;
 import com.shopstack.shopstack.repository.ReturnRequestRepository;
+import com.shopstack.shopstack.repository.VendorProfileRepository;
+import com.shopstack.shopstack.util.CommissionUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +40,8 @@ public class OrderService {
     private final CouponRepository couponRepository;
     private final ReturnRequestRepository returnRequestRepository;
     private final PaymentService paymentService;
+    private final CouponService couponService;
+    private final VendorProfileRepository vendorProfileRepository;
 
 
     public Order placeOrder(User user, CheckoutRequest request) {
@@ -70,25 +77,11 @@ public class OrderService {
         }
 
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-
-            Coupon coupon = couponRepository
-                    .findByCodeIgnoreCaseAndActiveTrue(request.getCouponCode())
-                    .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
-
-            if (coupon.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                throw new RuntimeException("Coupon Expired");
+            CouponValidationResponse valResponse = couponService.validateCoupon(request.getCouponCode(), subtotal);
+            if (!valResponse.isValid()) {
+                throw new RuntimeException(valResponse.getMessage());
             }
-
-            if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
-
-                discount = subtotal.multiply(coupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100));
-
-            } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
-
-                discount = coupon.getDiscountValue();
-
-            }
+            discount = valResponse.getCalculatedDiscount();
         }
 
         BigDecimal shippingFee = (subtotal.compareTo(new BigDecimal("1000")) > 0 || subtotal.compareTo(BigDecimal.ZERO) == 0)
@@ -173,9 +166,13 @@ public class OrderService {
 
 
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            couponService.incrementCouponUsage(request.getCouponCode());
+        }
 
+        return savedOrder;
     }
 
 
@@ -257,6 +254,23 @@ public class OrderService {
             }
         }
 
+
+        // Vendor can update only these statuses
+        if (isVendor) {
+
+            if (!uppercaseStatus.equals("CONFIRMED")
+                    && !uppercaseStatus.equals("PREPARING")
+                    && !uppercaseStatus.equals("READY_FOR_WAREHOUSE")) {
+
+                throw new RuntimeException(
+                        "Vendor can only update to CONFIRMED, PREPARING or READY_FOR_WAREHOUSE.");
+            }
+        }
+
+
+
+
+
         order.setTrackingStatus(uppercaseStatus);
 
         return orderRepository.save(order);
@@ -267,6 +281,11 @@ public class OrderService {
         if (user.getRole() != com.shopstack.shopstack.model.Role.VENDOR) {
             throw new RuntimeException("Access denied");
         }
+
+        VendorProfile vendorProfile = vendorProfileRepository.findByUserId(user.getId()).orElse(null);
+        BigDecimal commissionRate = vendorProfile != null && vendorProfile.getCommissionRate() != null
+                ? vendorProfile.getCommissionRate()
+                : CommissionUtils.DEFAULT_COMMISSION_RATE;
 
         List<Order> orders = orderRepository.findByVendorId(user.getId());
 
@@ -279,16 +298,18 @@ public class OrderService {
 
             for (OrderItem item : order.getItems()) {
 
-                if (item.getProduct()
-                        .getVendor()
-                        .getUser()
-                        .getId()
-                        .equals(user.getId())) {
+                if (item.getProduct() != null
+                        && item.getProduct().getVendor() != null
+                        && item.getProduct().getVendor().getUser() != null
+                        && item.getProduct().getVendor().getUser().getId().equals(user.getId())) {
 
                     BigDecimal total = item.getPrice()
                             .multiply(BigDecimal.valueOf(item.getQuantity()));
 
                     vendorAmount = vendorAmount.add(total);
+
+                    BigDecimal itemCommission = CommissionUtils.calculateCommission(item.getPrice(), item.getQuantity(), commissionRate);
+                    BigDecimal itemPayout = CommissionUtils.calculateVendorPayout(item.getPrice(), item.getQuantity(), commissionRate);
 
                     itemResponses.add(
                             VendorOrderItemResponse.builder()
@@ -297,27 +318,93 @@ public class OrderService {
                                     .quantity(item.getQuantity())
                                     .price(item.getPrice())
                                     .total(total)
+                                    .commissionRate(commissionRate)
+                                    .commissionDeducted(itemCommission)
+                                    .netPayout(itemPayout)
                                     .build()
                     );
                 }
             }
+
+            BigDecimal orderCommission = CommissionUtils.calculateCommission(vendorAmount, commissionRate);
+            BigDecimal orderPayout = CommissionUtils.calculateVendorPayout(vendorAmount, commissionRate);
 
             response.add(
                     VendorOrderResponse.builder()
                             .id(order.getId())
                             .orderDate(order.getOrderDate())
                             .customerName(
-                                    order.getUser().getFirstName() + " " + order.getUser().getLastName()
+                                    order.getUser() != null
+                                            ? (order.getUser().getFirstName() + " " + order.getUser().getLastName())
+                                            : "Customer"
                             )
                             .trackingStatus(order.getTrackingStatus())
                             .paymentStatus(order.getPaymentStatus())
                             .vendorAmount(vendorAmount)
+                            .commissionRate(commissionRate)
+                            .commissionDeducted(orderCommission)
+                            .netPayout(orderPayout)
+                            .shippingAddress(order.getShippingAddress())
                             .items(itemResponses)
                             .build()
             );
         }
 
         return response;
+    }
+
+    public VendorEarningsDTO getVendorEarningsSummary(User user) {
+        if (user.getRole() != com.shopstack.shopstack.model.Role.VENDOR) {
+            throw new RuntimeException("Access denied");
+        }
+
+        VendorProfile vendorProfile = vendorProfileRepository.findByUserId(user.getId()).orElse(null);
+        BigDecimal commissionRate = vendorProfile != null && vendorProfile.getCommissionRate() != null
+                ? vendorProfile.getCommissionRate()
+                : CommissionUtils.DEFAULT_COMMISSION_RATE;
+
+        List<Order> orders = orderRepository.findByVendorId(user.getId());
+        BigDecimal totalSales = BigDecimal.ZERO;
+        long completedOrders = 0;
+
+        for (Order order : orders) {
+            String trackingStatus = order.getTrackingStatus();
+            if (trackingStatus != null && trackingStatus.equalsIgnoreCase("CANCELLED")) {
+                continue;
+            }
+
+            BigDecimal orderVendorTotal = BigDecimal.ZERO;
+            if (order.getItems() != null) {
+                for (OrderItem item : order.getItems()) {
+                    if (item.getProduct() != null
+                            && item.getProduct().getVendor() != null
+                            && item.getProduct().getVendor().getUser() != null
+                            && item.getProduct().getVendor().getUser().getId().equals(user.getId())) {
+                        BigDecimal lineTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                        orderVendorTotal = orderVendorTotal.add(lineTotal);
+                    }
+                }
+            }
+
+            if (orderVendorTotal.compareTo(BigDecimal.ZERO) > 0) {
+                totalSales = totalSales.add(orderVendorTotal);
+                completedOrders++;
+            }
+        }
+
+        BigDecimal totalCommission = CommissionUtils.calculateCommission(totalSales, commissionRate);
+        BigDecimal totalPayout = CommissionUtils.calculateVendorPayout(totalSales, commissionRate);
+
+        return VendorEarningsDTO.builder()
+                .vendorId(vendorProfile != null ? vendorProfile.getId() : null)
+                .vendorName(vendorProfile != null ? vendorProfile.getStoreName() : (user.getFirstName() + " " + user.getLastName()))
+                .status(vendorProfile != null && vendorProfile.getStatus() != null ? vendorProfile.getStatus().name() : "ACTIVE")
+                .totalSales(totalSales)
+                .totalCommission(totalCommission)
+                .totalPayout(totalPayout)
+                .completedOrders(completedOrders)
+                .commissionRate(commissionRate)
+                .build();
     }
 
     public List<Order> getAllOrders() {
@@ -338,20 +425,11 @@ public class OrderService {
         }
 
         if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-            Coupon coupon = couponRepository
-                    .findByCodeIgnoreCaseAndActiveTrue(request.getCouponCode())
-                    .orElseThrow(() -> new RuntimeException("Invalid Coupon"));
-
-            if (coupon.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                throw new RuntimeException("Coupon Expired");
+            CouponValidationResponse valResponse = couponService.validateCoupon(request.getCouponCode(), subtotal);
+            if (!valResponse.isValid()) {
+                throw new RuntimeException(valResponse.getMessage());
             }
-
-            if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
-                discount = subtotal.multiply(coupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100));
-            } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
-                discount = coupon.getDiscountValue();
-            }
+            discount = valResponse.getCalculatedDiscount();
         }
 
         //shipping fee

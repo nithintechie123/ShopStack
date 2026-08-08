@@ -55,16 +55,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/vendor/**")
                         .hasRole("VENDOR")
 
-                                // Admin creates warehouses
-                                .requestMatchers(HttpMethod.POST, "/api/warehouse")
-                                .hasRole("ADMIN")
+                                // Admin creates, updates, and deletes warehouses
+                                .requestMatchers(HttpMethod.POST, "/api/warehouse").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/warehouse/*").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/warehouse/*").hasRole("ADMIN")
+                                // Both ADMIN and WAREHOUSE_STAFF can read warehouses
+                                .requestMatchers(HttpMethod.GET, "/api/warehouse").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
+                                .requestMatchers(HttpMethod.GET, "/api/warehouse/*").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
+                                // Warehouse operational paths can be accessed by both ADMIN and WAREHOUSE_STAFF
+                                .requestMatchers("/api/warehouse/**").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
 
-// Warehouse Staff performs warehouse operations
-                                .requestMatchers("/api/warehouse/**")
-                                .hasRole("WAREHOUSE_STAFF")
-
-                        .requestMatchers("/api/shipment/**")
-                        .hasRole("WAREHOUSE_STAFF")
+                        .requestMatchers("/api/shipment/**").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
 
                         .anyRequest().authenticated()
                 );
@@ -87,7 +88,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));

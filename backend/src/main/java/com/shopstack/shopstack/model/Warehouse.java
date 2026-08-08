@@ -1,6 +1,7 @@
 package com.shopstack.shopstack.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.UuidGenerator;
 import com.shopstack.shopstack.WarehouseStatus;
 import jakarta.persistence.*;
@@ -49,6 +50,10 @@ public class Warehouse {
     @Column(nullable = false)
     private String contactNumber;
 
+    @Column(nullable = false, columnDefinition = "integer default 100000")
+    @Builder.Default
+    private Integer capacity = 100000;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WarehouseStatus status;
@@ -69,6 +74,7 @@ public class Warehouse {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @JsonIgnore
     @Builder.Default
     private List<WarehouseInventory> inventories = new ArrayList<>();
 }

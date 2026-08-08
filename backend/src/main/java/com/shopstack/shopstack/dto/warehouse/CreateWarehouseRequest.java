@@ -1,6 +1,8 @@
 package com.shopstack.shopstack.dto.warehouse;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 @Data
@@ -29,4 +31,8 @@ public class CreateWarehouseRequest {
 
     @NotBlank(message = "Contact number is required")
     private String contactNumber;
+
+    @NotNull(message = "Capacity is required")
+    @Min(value = 1, message = "Capacity must be positive")
+    private Integer capacity;
 }

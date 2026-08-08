@@ -20,4 +20,5 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     //Added for admin reports
     List<Order> findByTrackingStatusNot(String trackingStatus);
+    long countByTrackingStatus(String trackingStatus);
 }

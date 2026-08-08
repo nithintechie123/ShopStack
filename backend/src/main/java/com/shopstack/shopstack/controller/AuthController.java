@@ -3,6 +3,8 @@ package com.shopstack.shopstack.controller;
 import com.shopstack.shopstack.dto.LoginRequest;
 import com.shopstack.shopstack.dto.LoginResponse;
 import com.shopstack.shopstack.dto.RegisterRequest;
+import com.shopstack.shopstack.dto.ForgotPasswordRequest;
+import com.shopstack.shopstack.dto.ResetPasswordRequest;
 import com.shopstack.shopstack.model.User;
 import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.service.AuthService;
@@ -82,5 +84,34 @@ public class AuthController {
         response.put("profilePictureUrl", user.getProfilePictureUrl());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            String otp = authService.forgotPassword(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Reset OTP generated successfully!");
+            response.put("resetToken", otp); 
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password reset successfully!");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 }

@@ -6,12 +6,19 @@ import OrderTracker from '../../components/orders/OrderTracker';
 import OrderSuccessModal from '../../components/orders/OrderSuccessModal';
 
 const STATUS_META = {
-  PLACED:           { label: 'Order Placed',     cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
-  PROCESSING:       { label: 'Processing',       cls: 'bg-accent-primary/10 border-accent-primary/20 text-accent-primary' },
-  SHIPPED:          { label: 'Shipped',          cls: 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning' },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery',   cls: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
-  DELIVERED:        { label: 'Delivered',        cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' },
-  CANCELLED:        { label: 'Cancelled',        cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' },
+  PLACED:              { label: 'Order Placed',       cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
+  CONFIRMED:           { label: 'Confirmed',          cls: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' },
+  PREPARING:           { label: 'Preparing',          cls: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
+  READY_FOR_WAREHOUSE: { label: 'Ready for Handover', cls: 'bg-teal-500/10 border-teal-500/20 text-teal-400' },
+  ALLOCATED:           { label: 'Allocated',          cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  PICKED:              { label: 'Picked',             cls: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' },
+  PACKED:              { label: 'Packed',             cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
+  READY_FOR_SHIPMENT:  { label: 'Ready for Shipment', cls: 'bg-green-500/10 border-green-500/20 text-green-400' },
+  PROCESSING:          { label: 'Processing',         cls: 'bg-accent-primary/10 border-accent-primary/20 text-accent-primary' },
+  SHIPPED:             { label: 'Shipped',            cls: 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning' },
+  OUT_FOR_DELIVERY:    { label: 'Out for Delivery',   cls: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
+  DELIVERED:           { label: 'Delivered',          cls: 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary' },
+  CANCELLED:           { label: 'Cancelled',          cls: 'bg-accent-danger/10 border-accent-danger/20 text-accent-danger' },
 };
 
 export default function Orders() {
@@ -246,6 +253,11 @@ export default function Orders() {
                             <Package size={18} className="text-accent-primary" />
                           </div>
                           <div>
+                            {item.product?.vendor?.storeName && (
+                              <p className="text-[10px] text-accent-primary font-bold uppercase tracking-wider mb-0.5">
+                                {item.product.vendor.storeName}
+                              </p>
+                            )}
                             <h4 className="font-bold text-text-primary">{item.product?.name || item.productName || 'Marketplace Item'}</h4>
                             <p className="text-[10px] text-text-muted mt-0.5 font-medium">
                               {item.product?.brand ? `${item.product.brand} • ` : ''} Qty {item.quantity}

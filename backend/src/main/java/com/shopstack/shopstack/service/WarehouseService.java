@@ -1,23 +1,19 @@
 package com.shopstack.shopstack.service;
 
+import java.util.List;
 import java.util.Optional;
 
+import com.shopstack.shopstack.dto.warehouse.*;
+import com.shopstack.shopstack.model.*;
 import com.shopstack.shopstack.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.shopstack.shopstack.dto.warehouse.AllocateOrderRequest;
-import com.shopstack.shopstack.model.Order;
-import com.shopstack.shopstack.model.OrderItem;
-import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.model.WarehouseAllocation;
-import com.shopstack.shopstack.model.WarehouseInventory;
-import com.shopstack.shopstack.dto.warehouse.CreateWarehouseRequest;
 import com.shopstack.shopstack.WarehouseStatus;
 import com.shopstack.shopstack.model.Warehouse;
-import com.shopstack.shopstack.dto.warehouse.AddInventoryRequest;
-import com.shopstack.shopstack.model.Product;
-import com.shopstack.shopstack.model.Warehouse;
+
+import java.util.UUID;
+import com.shopstack.shopstack.dto.warehouse.UpdateInventoryRequest;
 import com.shopstack.shopstack.model.WarehouseInventory;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +27,8 @@ public class WarehouseService {
     private final WarehouseInventoryRepository warehouseInventoryRepository;
     private final WarehouseAllocationRepository warehouseAllocationRepository;
     private final ProductRepository productRepository;
+    private final StockMovementService stockMovementService;
+    private final StockMovementRepository stockMovementRepository;
 
     @Transactional
     public String allocateOrder(AllocateOrderRequest request) {
@@ -74,6 +72,14 @@ public class WarehouseService {
             );
 
             warehouseInventoryRepository.save(inventory);
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Allocated - " + order.getId()
+            );
         }
 
         WarehouseAllocation allocation = WarehouseAllocation.builder()
@@ -105,6 +111,7 @@ public class WarehouseService {
                 .pincode(request.getPincode())
                 .managerName(request.getManagerName())
                 .contactNumber(request.getContactNumber())
+                .capacity(request.getCapacity())
                 .status(WarehouseStatus.ACTIVE)
                 .build();
 
@@ -135,6 +142,212 @@ public class WarehouseService {
                 .reservedQuantity(0)
                 .build();
 
+        WarehouseInventory savedInventory = warehouseInventoryRepository.save(inventory);
+
+        stockMovementService.recordMovement(
+                warehouse,
+                product,
+                MovementType.IN,
+                request.getAvailableQuantity(),
+                "Inventory Received"
+        );
+
+        return savedInventory;
+    }
+
+
+    @Transactional
+    public WarehouseInventory updateInventory(
+            UUID inventoryId,
+            UpdateInventoryRequest request) {
+
+        System.out.println("Received Inventory ID: " + inventoryId);
+
+        System.out.println("All Inventories:");
+        warehouseInventoryRepository.findAll().forEach(i ->
+                System.out.println(i.getId())
+        );
+
+        WarehouseInventory inventory = warehouseInventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found."));
+
+        inventory.setAvailableQuantity(request.getAvailableQuantity());
+        inventory.setReservedQuantity(request.getReservedQuantity());
+
         return warehouseInventoryRepository.save(inventory);
     }
+
+    @Transactional
+    public String deleteInventory(UUID inventoryId) {
+
+        WarehouseInventory inventory = warehouseInventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found."));
+
+        warehouseInventoryRepository.delete(inventory);
+
+        return "Inventory deleted successfully.";
+    }
+
+    @Transactional(readOnly = true)
+    public List<Warehouse> getAllWarehouses() {
+
+        return warehouseRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Warehouse getWarehouseById(UUID warehouseId) {
+        return warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+    }
+
+
+    @Transactional
+    public Warehouse updateWarehouse(
+            UUID warehouseId,
+            UpdateWarehouseRequest request) {
+
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+
+        warehouse.setWarehouseName(request.getWarehouseName());
+        warehouse.setAddress(request.getAddress());
+        warehouse.setCity(request.getCity());
+        warehouse.setState(request.getState());
+        warehouse.setPincode(request.getPincode());
+        warehouse.setManagerName(request.getManagerName());
+        warehouse.setContactNumber(request.getContactNumber());
+        warehouse.setStatus(request.getStatus());
+        warehouse.setCapacity(request.getCapacity());
+
+        return warehouseRepository.save(warehouse);
+    }
+
+
+
+    @Transactional
+    public String pickOrder(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"ALLOCATED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only allocated orders can be picked.");
+        }
+
+        order.setTrackingStatus("PICKED");
+
+        orderRepository.save(order);
+
+
+        List<WarehouseAllocation> allocations =
+                warehouseAllocationRepository.findByOrder(order);
+
+        if (allocations.isEmpty()) {
+            throw new RuntimeException("Warehouse allocation not found.");
+        }
+
+        Warehouse warehouse = allocations.get(0).getWarehouse();
+
+        for (OrderItem item : order.getItems()) {
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Picked - " + order.getId()
+            );
+        }
+
+
+
+        return "Order picked successfully.";
+    }
+
+    @Transactional
+    public String packOrder(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"PICKED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only picked orders can be packed.");
+        }
+
+        order.setTrackingStatus("PACKED");
+
+        orderRepository.save(order);
+
+        List<WarehouseAllocation> allocations =
+                warehouseAllocationRepository.findByOrder(order);
+
+        if (allocations.isEmpty()) {
+            throw new RuntimeException("Warehouse allocation not found.");
+        }
+
+        Warehouse warehouse = allocations.get(0).getWarehouse();
+
+        for (OrderItem item : order.getItems()) {
+
+            stockMovementService.recordMovement(
+                    warehouse,
+                    item.getProduct(),
+                    MovementType.OUT,
+                    item.getQuantity(),
+                    "Order Packed - " + order.getId()
+            );
+        }
+
+
+
+
+        return "Order packed successfully.";
+    }
+
+    @Transactional
+    public String markReadyForShipment(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found."));
+
+        if (!"PACKED".equals(order.getTrackingStatus())) {
+            throw new RuntimeException("Only packed orders can be marked ready for shipment.");
+        }
+
+        order.setTrackingStatus("READY_TO_SHIP");
+
+        orderRepository.save(order);
+
+        return "Order marked as ready for shipment.";
+    }
+
+    @Transactional
+    public String deleteWarehouse(UUID warehouseId) {
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found."));
+
+        // Delete associated allocations
+        List<WarehouseAllocation> allocations = warehouseAllocationRepository.findByWarehouse(warehouse);
+        warehouseAllocationRepository.deleteAll(allocations);
+
+        // Delete associated stock movements
+        List<com.shopstack.shopstack.model.StockMovement> movements = stockMovementRepository.findByWarehouse(warehouse);
+        stockMovementRepository.deleteAll(movements);
+
+        // Delete the warehouse entity (associated inventories are cascade deleted)
+        warehouseRepository.delete(warehouse);
+
+        return "Warehouse deleted successfully.";
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getWarehouseOrders() {
+        return orderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WarehouseInventory> getAllInventories() {
+        return warehouseInventoryRepository.findAll();
+    }
+
 }

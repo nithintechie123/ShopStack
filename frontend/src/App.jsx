@@ -6,6 +6,7 @@ import { ProtectedRoute, RoleRoute } from './components/guards/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Home from './pages/home/Home';
 import ProductDetail from './pages/home/ProductDetail'; 
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -18,6 +19,18 @@ import RevenueReport from './pages/admin/RevenueReport';
 import SalesReport from './pages/admin/SalesReport';
 import VendorPerformanceReport from './pages/admin/VendorPerformanceReport';
 import CategoryAnalyticsReport from './pages/admin/CategoryAnalyticsReport';
+import WarehouseList from './pages/admin/WarehouseList';
+import WarehouseCreate from './pages/admin/WarehouseCreate';
+import WarehouseEdit from './pages/admin/WarehouseEdit';
+import WarehouseLayout from './pages/warehouse/WarehouseLayout';
+import WarehouseLogin from './pages/warehouse/WarehouseLogin';
+import WarehouseDashboard from './pages/warehouse/WarehouseDashboard';
+import WarehouseInventory from './pages/warehouse/WarehouseInventory';
+import WarehouseReceive from './pages/warehouse/WarehouseReceive';
+import WarehousePickPack from './pages/warehouse/WarehousePickPack';
+import WarehouseShipment from './pages/warehouse/WarehouseShipment';
+import WarehouseStockMovement from './pages/warehouse/WarehouseStockMovement';
+import WarehouseAnalytics from './pages/warehouse/WarehouseAnalytics';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
@@ -52,6 +65,7 @@ export default function App() {
               <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
               <Route path="/register" element={<Layout><Register /></Layout>} />
+              <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
               <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
 
               {/* Vendor Routes */}
@@ -81,6 +95,22 @@ export default function App() {
                 <Route path="/admin/reports/sales" element={<Layout><SalesReport /></Layout>} />
                 <Route path="/admin/reports/vendor" element={<Layout><VendorPerformanceReport /></Layout>} />
                 <Route path="/admin/reports/category" element={<Layout><CategoryAnalyticsReport /></Layout>} />
+                <Route path="/admin/warehouses" element={<Layout><WarehouseList /></Layout>} />
+                <Route path="/admin/create-warehouse" element={<Layout><WarehouseCreate /></Layout>} />
+                <Route path="/admin/edit-warehouse/:id" element={<Layout><WarehouseEdit /></Layout>} />
+              </Route>
+
+              <Route path="/warehouse/login" element={<Layout><WarehouseLogin /></Layout>} />
+              <Route element={<RoleRoute role="WAREHOUSE_STAFF" />}>
+                <Route path="/warehouse" element={<WarehouseLayout />}>
+                  <Route path="dashboard" element={<WarehouseDashboard />} />
+                  <Route path="inventory" element={<WarehouseInventory />} />
+                  <Route path="receive" element={<WarehouseReceive />} />
+                  <Route path="pick-pack" element={<WarehousePickPack />} />
+                  <Route path="shipment" element={<WarehouseShipment />} />
+                  <Route path="stock-movement" element={<WarehouseStockMovement />} />
+                  <Route path="analytics" element={<WarehouseAnalytics />} />
+                </Route>
               </Route>
 
               {/* Authenticated Customer Routes */}

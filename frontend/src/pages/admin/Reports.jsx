@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DollarSign, ShoppingCart, Store, LayoutGrid } from 'lucide-react';
+import { DollarSign, ShoppingCart, Store, LayoutGrid, Award } from 'lucide-react';
 import { getAdminOrders } from '../../api/orders';
 import { getAllVendors } from '../../api/vendors';
 import ReportHeader from '../../components/admin/ReportHeader';
@@ -7,20 +7,13 @@ import { printElement, downloadCSV } from '../../utils/exportUtils';
 import ReportSkeleton from '../../components/admin/ReportSkeleton';
 import SummaryCard from '../../components/admin/SummaryCard';
 import ReportCard from '../../components/admin/ReportCard';
-import { Link } from 'react-router-dom';
 
 const filterItems = [
   { label: 'Today', value: 'today' },
   { label: 'Last 7 Days', value: '7days' },
   { label: 'Last Month', value: 'lastmonth' },
   { label: 'Last 6 Months', value: '6months' },
-];
-
-const quickReports = [
-  { icon: DollarSign, title: 'Revenue Analytics', description: 'Track platform revenue across time and categories.', to: '/admin/reports/revenue' },
-  { icon: ShoppingCart, title: 'Sales Analytics', description: 'Analyze top-selling items and order trends.', to: '/admin/reports/sales' },
-  { icon: Store, title: 'Vendor Performance', description: 'Compare vendor revenue and order performance.', to: '/admin/reports/vendor' },
-  { icon: LayoutGrid, title: 'Category Analytics', description: 'Review sales distribution across product categories.', to: '/admin/reports/category' },
+  { label: 'Custom Range', value: 'custom' },
 ];
 
 function formatCurrency(value) {
@@ -32,11 +25,20 @@ function computeTrend(current, previous) {
   return Math.round(((current - previous) / previous) * 100);
 }
 
+const quickReports = [
+  { icon: DollarSign, title: 'Revenue Analytics', description: 'Track platform revenue across time and categories.', to: '/admin/reports/revenue' },
+  { icon: ShoppingCart, title: 'Sales Analytics', description: 'Analyze top-selling items and order trends.', to: '/admin/reports/sales' },
+  { icon: Store, title: 'Vendor Performance', description: 'Compare vendor revenue and order performance.', to: '/admin/reports/vendor' },
+  { icon: LayoutGrid, title: 'Category Analytics', description: 'Review sales distribution across product categories.', to: '/admin/reports/category' },
+];
+
 export default function Reports() {
   const [orders, setOrders] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('7days');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -52,6 +54,19 @@ export default function Reports() {
   const filteredOrders = useMemo(() => {
     const now = new Date();
     const start = new Date(now);
+
+    if (activeFilter === 'custom') {
+      if (!startDate || !endDate) return orders;
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      return orders.filter((order) => {
+        const orderDate = new Date(order.orderDate || order.createdAt || Date.now());
+        return orderDate >= s && orderDate <= e;
+      });
+    }
+
     switch (activeFilter) {
       case 'today':
         start.setDate(now.getDate() - 1);
@@ -72,13 +87,14 @@ export default function Reports() {
       const date = new Date(order.orderDate || order.createdAt || Date.now());
       return date >= start && date <= now;
     });
-  }, [orders, activeFilter]);
+  }, [orders, activeFilter, startDate, endDate]);
 
   const summary = useMemo(() => {
     const totalRevenue = filteredOrders.reduce((sum, order) => sum + (parseFloat(order.finalAmount || order.totalAmount || 0) || 0), 0);
     const totalOrders = filteredOrders.length;
     const productsSold = filteredOrders.reduce((sum, order) => sum + (order.items || order.orderItems || []).reduce((count, item) => count + (parseInt(item.quantity || 0, 10) || 0), 0), 0);
     const activeVendorIds = new Set(filteredOrders.flatMap((order) => (order.items || order.orderItems || []).map((item) => item.product?.vendor?.id || item.product?.vendorId))).size;
+    const averageOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
     const previousRevenue = Math.max(totalRevenue - 120000, 1);
     const previousOrders = Math.max(totalOrders - 10, 1);
 
@@ -87,6 +103,7 @@ export default function Reports() {
       totalOrders,
       productsSold,
       activeVendors: activeVendorIds,
+      averageOrderValue,
       revenueTrend: computeTrend(totalRevenue, previousRevenue),
       ordersTrend: computeTrend(totalOrders, previousOrders),
     };
@@ -95,9 +112,11 @@ export default function Reports() {
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight">Reports</h1>
-          <p className="text-sm text-text-muted mt-2">A modern analytics dashboard for revenue, sales, vendors, and category performance.</p>
+        <div className="mb-8 relative">
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-violet-600/5 rounded-full filter blur-3xl" />
+          <div className="absolute -top-6 -right-6 w-32 h-32 bg-indigo-600/5 rounded-full filter blur-2xl" />
+          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Reports & Analytics</h1>
+          <p className="text-sm text-text-muted mt-2">A modern analytics dashboard monitoring platform revenue, order tracking, and seller metrics.</p>
         </div>
 
         <ReportHeader
@@ -112,23 +131,29 @@ export default function Reports() {
               { Metric: 'Total Orders', Value: summary.totalOrders },
               { Metric: 'Products Sold', Value: summary.productsSold },
               { Metric: 'Active Vendors', Value: summary.activeVendors },
+              { Metric: 'Average Order Value', Value: formatCurrency(summary.averageOrderValue) }
             ];
             downloadCSV('reports-summary.csv', rows, ['Metric', 'Value']);
           }}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
         />
 
         {loading ? (
           <ReportSkeleton />
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-4 mb-6">
-              <SummaryCard icon={DollarSign} title="Total Revenue" value={formatCurrency(summary.totalRevenue)} detail="Revenue for the chosen range" trend={summary.revenueTrend} />
-              <SummaryCard icon={ShoppingCart} title="Total Orders" value={summary.totalOrders} detail="Orders in the chosen range" trend={summary.ordersTrend} />
-              <SummaryCard icon={LayoutGrid} title="Products Sold" value={summary.productsSold} detail="Total quantity sold" trend={8} />
-              <SummaryCard icon={Store} title="Active Vendors" value={summary.activeVendors} detail="Vendors with sales" trend={4} />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
+              <SummaryCard icon={DollarSign} title="Total Revenue" value={formatCurrency(summary.totalRevenue)} detail="Sales in the chosen range" trend={summary.revenueTrend} />
+              <SummaryCard icon={ShoppingCart} title="Total Orders" value={summary.totalOrders} detail="Purchases completed" trend={summary.ordersTrend} />
+              <SummaryCard icon={LayoutGrid} title="Products Sold" value={summary.productsSold} detail="Total items sold" trend={8} />
+              <SummaryCard icon={Store} title="Active Vendors" value={summary.activeVendors} detail="Vendors with orders" trend={4} />
+              <SummaryCard icon={Award} title="Avg. Order Value" value={formatCurrency(summary.averageOrderValue)} detail="Mean order size" trend={3} />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {quickReports.map((item) => (
                 <ReportCard key={item.title} {...item} />
               ))}

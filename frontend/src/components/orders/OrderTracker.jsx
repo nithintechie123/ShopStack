@@ -56,10 +56,33 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
   const currentStatus = (order.trackingStatus || order.orderStatus || 'PLACED').toUpperCase();
   const isCancelled = currentStatus === 'CANCELLED';
 
+  // Map backend prep states to user-facing steps
+  const getStepIndex = (status) => {
+    switch (status) {
+      case 'PLACED':
+        return 0;
+      case 'CONFIRMED':
+      case 'PREPARING':
+      case 'READY_FOR_WAREHOUSE':
+      case 'ALLOCATED':
+      case 'PICKED':
+      case 'PACKED':
+      case 'READY_FOR_SHIPMENT':
+      case 'PROCESSING':
+        return 1;
+      case 'SHIPPED':
+        return 2;
+      case 'OUT_FOR_DELIVERY':
+        return 3;
+      case 'DELIVERED':
+        return 4;
+      default:
+        return 0;
+    }
+  };
+
   // Calculate current step index
-  const activeStepIndex = isCancelled
-    ? -1
-    : TRACKING_STEPS.findIndex((s) => s.key === currentStatus);
+  const activeStepIndex = isCancelled ? -1 : getStepIndex(currentStatus);
 
   // Calculate estimated delivery date (4 days after order date)
   const orderDateObj = order.orderDate ? new Date(order.orderDate) : new Date();
@@ -93,7 +116,7 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
 
   const canCustomerCancel =
     isCustomer &&
-    (currentStatus === 'PLACED' || currentStatus === 'PROCESSING') &&
+    ['PLACED', 'CONFIRMED', 'PREPARING', 'READY_FOR_WAREHOUSE', 'ALLOCATED', 'PICKED', 'PACKED', 'READY_FOR_SHIPMENT', 'PROCESSING'].includes(currentStatus) &&
     !isCancelled;
 
   const canVendorOrAdminUpdate =

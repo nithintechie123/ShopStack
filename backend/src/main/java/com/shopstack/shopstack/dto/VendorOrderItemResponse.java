@@ -20,4 +20,10 @@ public class VendorOrderItemResponse {
     private BigDecimal price;
 
     private BigDecimal total;
+
+    private BigDecimal commissionRate;
+
+    private BigDecimal commissionDeducted;
+
+    private BigDecimal netPayout;
 }

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { validateCoupon, checkoutOrder, createPaymentSession } from '../../api/orders';
+import { validateCoupon } from '../../api/coupons';
+import { checkoutOrder, createPaymentSession } from '../../api/orders';
+import AvailableCouponsModal from '../../components/coupons/AvailableCouponsModal';
 import {
   ShoppingBag,
   MapPin,
@@ -13,6 +15,7 @@ import {
   Package,
   Truck,
   FileText,
+  Sparkles,
   CheckSquare,
   Square,
   Lock,
@@ -83,6 +86,7 @@ const checkoutItems =
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [offersModalOpen, setOffersModalOpen] = useState(false);
 
   // Submission state
   const [loading, setLoading] = useState(false);
@@ -119,18 +123,27 @@ const finalTotal = Math.max(
   checkoutSubtotal - discountAmount + shippingFee
 );
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
+  const handleApplyCoupon = async (e, codeToApply) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const code = codeToApply || couponCode;
+    if (!code || !code.trim()) return;
+
     setCouponError('');
     setCouponLoading(true);
     try {
-      const res = await validateCoupon(couponCode.trim());
-      setAppliedCoupon(res.data);
-      setCouponError('');
+      const res = await validateCoupon(code.trim(), checkoutSubtotal);
+      if (res.data && res.data.valid) {
+        setAppliedCoupon(res.data);
+        setCouponCode(code.trim().toUpperCase());
+        setCouponError('');
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(res.data?.message || 'Invalid or expired coupon code.');
+      }
     } catch (err) {
       setAppliedCoupon(null);
-      setCouponError(err.response?.data?.error || 'Invalid or expired coupon code.');
+      const errMsg = err.response?.data?.message || err.response?.data?.error || 'Invalid or expired coupon code.';
+      setCouponError(errMsg);
     } finally {
       setCouponLoading(false);
     }
@@ -453,6 +466,11 @@ const finalTotal = Math.max(
                         <Package size={14} className="text-text-muted" />
                       </div>
                       <div className="truncate">
+                        {item.product.vendor?.storeName && (
+                          <span className="text-[9px] text-accent-primary font-bold uppercase tracking-wider block mb-0.5">
+                            {item.product.vendor.storeName}
+                          </span>
+                        )}
                         <span className="font-semibold text-text-primary block truncate">{item.product.name}</span>
                         <span className="text-[10px] text-text-muted">Qty {item.quantity}</span>
                       </div>
@@ -486,17 +504,38 @@ const finalTotal = Math.max(
                   </button>
                 </form>
 
+                {/* Browse Offers link */}
+                <button
+                  type="button"
+                  onClick={() => setOffersModalOpen(true)}
+                  className="mt-2 text-[11px] font-bold text-accent-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles size={13} />
+                  <span>Browse Available Offers & Coupons</span>
+                </button>
+
                 {couponError && (
-                  <p className="text-[11px] text-accent-danger font-semibold mt-2">{couponError}</p>
+                  <div className="mt-2 p-2.5 rounded-lg bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-[11px] font-semibold">
+                    {couponError}
+                  </div>
                 )}
 
                 {appliedCoupon && (
                   <div className="mt-2.5 p-2.5 rounded-lg bg-accent-secondary/10 border border-accent-secondary/20 text-accent-secondary text-xs font-bold flex justify-between items-center">
-                    <span>Coupon &apos;{appliedCoupon.code}&apos; Applied!</span>
+                    <div>
+                      <div>Coupon &apos;{appliedCoupon.code}&apos; Applied!</div>
+                      {appliedCoupon.description && (
+                        <div className="text-[10px] text-text-muted font-normal mt-0.5">{appliedCoupon.description}</div>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setAppliedCoupon(null)}
-                      className="text-[10px] hover:underline cursor-pointer"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponCode('');
+                        setCouponError('');
+                      }}
+                      className="text-[10px] hover:underline cursor-pointer ml-2 text-accent-danger shrink-0 font-bold"
                     >
                       Remove
                     </button>
@@ -552,6 +591,13 @@ const finalTotal = Math.max(
         </div>
 
       </div>
+      {/* Available Offers Modal */}
+      <AvailableCouponsModal
+        isOpen={offersModalOpen}
+        onClose={() => setOffersModalOpen(false)}
+        currentSubtotal={checkoutSubtotal}
+        onApplyCoupon={(code) => handleApplyCoupon(null, code)}
+      />
     </div>
   );
 }

@@ -4,7 +4,11 @@ import com.shopstack.shopstack.dto.admin.CreateWarehouseStaffRequest;
 import com.shopstack.shopstack.dto.LoginRequest;
 import com.shopstack.shopstack.dto.LoginResponse;
 import com.shopstack.shopstack.dto.RegisterRequest;
+import com.shopstack.shopstack.dto.ForgotPasswordRequest;
+import com.shopstack.shopstack.dto.ResetPasswordRequest;
 import com.shopstack.shopstack.model.*;
+import java.time.LocalDateTime;
+import java.util.Random;
 import com.shopstack.shopstack.repository.CustomerProfileRepository;
 import com.shopstack.shopstack.repository.UserRepository;
 import com.shopstack.shopstack.repository.VendorProfileRepository;
@@ -28,19 +32,22 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final EmailService emailService;
 
     public AuthService(UserRepository userRepository,
                        CustomerProfileRepository customerProfileRepository,
                        VendorProfileRepository vendorProfileRepository,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
-                       JwtTokenProvider tokenProvider) {
+                       JwtTokenProvider tokenProvider,
+                       EmailService emailService) {
         this.userRepository = userRepository;
         this.customerProfileRepository = customerProfileRepository;
         this.vendorProfileRepository = vendorProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -147,5 +154,42 @@ public class AuthService {
                 .build();
 
         return userRepository.save(warehouseStaff);
+    }
+
+    @Transactional
+    public String forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("No user is registered with this email address!"));
+
+        Random random = new Random();
+        int otpNum = 100000 + random.nextInt(900000);
+        String otp = String.valueOf(otpNum);
+
+        user.setResetToken(otp);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        emailService.sendOtpEmail(user.getEmail(), otp);
+
+        return otp;
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("No user is registered with this email address!"));
+
+        if (user.getResetToken() == null || !user.getResetToken().equals(request.getToken())) {
+            throw new IllegalArgumentException("Invalid reset token!");
+        }
+
+        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Reset token has expired!");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
     }
 }

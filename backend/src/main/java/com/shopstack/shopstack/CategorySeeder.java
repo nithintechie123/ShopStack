@@ -44,19 +44,53 @@ public class CategorySeeder implements CommandLineRunner {
                     .code("SAVE20")
                     .discountType("PERCENTAGE")
                     .discountValue(new BigDecimal("20.00"))
-                    .expiryDate(LocalDateTime.now().plusYears(5))
+                    .minOrderAmount(new BigDecimal("500.00"))
+                    .maxDiscountAmount(new BigDecimal("1000.00"))
+                    .usageLimit(100)
+                    .usedCount(5)
+                    .description("Get 20% off on orders above ₹500 (Max discount ₹1000)")
+                    .expiryDate(LocalDateTime.now().plusYears(2))
                     .active(true)
                     .build();
+
             Coupon flat500 = Coupon.builder()
                     .code("FLAT500")
                     .discountType("FLAT")
                     .discountValue(new BigDecimal("500.00"))
-                    .expiryDate(LocalDateTime.now().plusYears(5))
+                    .minOrderAmount(new BigDecimal("2000.00"))
+                    .usageLimit(50)
+                    .usedCount(12)
+                    .description("Flat ₹500 discount on orders above ₹2000")
+                    .expiryDate(LocalDateTime.now().plusYears(2))
                     .active(true)
                     .build();
+
+            Coupon welcome10 = Coupon.builder()
+                    .code("WELCOME10")
+                    .discountType("PERCENTAGE")
+                    .discountValue(new BigDecimal("10.00"))
+                    .minOrderAmount(new BigDecimal("100.00"))
+                    .usageLimit(500)
+                    .usedCount(42)
+                    .description("10% instant discount on your purchase")
+                    .expiryDate(LocalDateTime.now().plusYears(3))
+                    .active(true)
+                    .build();
+
+            Coupon expired20 = Coupon.builder()
+                    .code("EXPIRED20")
+                    .discountType("PERCENTAGE")
+                    .discountValue(new BigDecimal("20.00"))
+                    .description("Expired summer promotion")
+                    .expiryDate(LocalDateTime.now().minusMonths(1))
+                    .active(true)
+                    .build();
+
             couponRepository.save(save20);
             couponRepository.save(flat500);
-            System.out.println("Seeded default coupons: SAVE20, FLAT500");
+            couponRepository.save(welcome10);
+            couponRepository.save(expired20);
+            System.out.println("Seeded default coupons: SAVE20, FLAT500, WELCOME10, EXPIRED20");
         }
 
         List<Category> defaultCategories = Arrays.asList(

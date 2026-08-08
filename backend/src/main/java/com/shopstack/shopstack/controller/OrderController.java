@@ -124,6 +124,17 @@ public class OrderController {
         }
     }
 
+    @GetMapping({"/api/vendor/earnings-summary", "/api/vendor/earnings"})
+    public ResponseEntity<?> getVendorEarningsSummary() {
+        try {
+            User user = getCurrentUser();
+            var summary = orderService.getVendorEarningsSummary(user);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/api/admin/orders")
     public ResponseEntity<?> getAdminOrders() {
         try {
@@ -133,24 +144,6 @@ public class OrderController {
             }
             List<Order> orders = orderService.getAllOrders();
             return ResponseEntity.ok(orders);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/api/coupons/validate/{code}")
-    public ResponseEntity<?> validateCoupon(@PathVariable("code") String code) {
-        try {
-            Coupon coupon = couponRepository.findByCodeIgnoreCaseAndActiveTrue(code)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid or inactive coupon code!"));
-            if (coupon.getExpiryDate().isBefore(LocalDateTime.now())) {
-                throw new IllegalArgumentException("Coupon code has expired!");
-            }
-            return ResponseEntity.ok(Map.of(
-                    "code", coupon.getCode(),
-                    "discountType", coupon.getDiscountType(),
-                    "discountValue", coupon.getDiscountValue()
-            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.shopstack.shopstack.model.Product;
 import com.shopstack.shopstack.model.Warehouse;
 import com.shopstack.shopstack.model.WarehouseInventory;
-
+import org.springframework.data.jpa.repository.Query;
 @Repository
 public interface WarehouseInventoryRepository extends JpaRepository<WarehouseInventory, UUID> {
 
@@ -22,4 +22,6 @@ public interface WarehouseInventoryRepository extends JpaRepository<WarehouseInv
             Warehouse warehouse,
             Product product
     );
+    @Query("SELECT COALESCE(SUM(w.availableQuantity), 0) FROM WarehouseInventory w")
+    Long getTotalAvailableStock();
 }
