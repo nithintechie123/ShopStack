@@ -15,14 +15,26 @@ import {
   Package,
   User,
   HelpCircle,
-  DollarSign
+  DollarSign,
+  ShieldAlert,
+  ClipboardList
 } from "lucide-react";
 
 function VendorReturnManagement() {
   const [returns, setReturns] = useState([]);
   const [message, setMessage] = useState("");
-  const [msgType, setMsgType] = useState("success"); // "success" or "error"
+  const [msgType, setMsgType] = useState("success");
   const [loading, setLoading] = useState(true);
+
+  // Inspection Modal State
+  const [activeInspection, setActiveInspection] = useState(null);
+  const [validationChecklist, setValidationChecklist] = useState({
+    skuMatched: false,
+    defectConfirmed: false,
+    policyWindowValid: false,
+  });
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
 
   useEffect(() => {
     loadReturns();
@@ -40,12 +52,34 @@ function VendorReturnManagement() {
       .finally(() => setLoading(false));
   };
 
-  const handleStatusUpdate = (orderId, status) => {
-    const actionText = status === "APPROVED" ? "approve this return request" : status === "REJECTED" ? "reject this return request" : "process the refund";
-    if (!window.confirm(`Are you sure you want to ${actionText}?`)) {
-      return;
-    }
+  const handleOpenInspection = (request) => {
+    setActiveInspection(request);
+    setValidationChecklist({
+      skuMatched: false,
+      defectConfirmed: false,
+      policyWindowValid: false,
+    });
+    setRejectionReasonInput("");
+    setShowRejectForm(false);
+  };
 
+  const handleCloseInspection = () => {
+    setActiveInspection(null);
+  };
+
+  const handleChecklistChange = (key) => {
+    setValidationChecklist((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const isChecklistComplete =
+    validationChecklist.skuMatched &&
+    validationChecklist.defectConfirmed &&
+    validationChecklist.policyWindowValid;
+
+  const executeStatusUpdate = (orderId, status, rejectionReason = "") => {
     updateReturnStatus(orderId, status)
       .then(() => {
         setMsgType("success");
@@ -57,6 +91,7 @@ function VendorReturnManagement() {
             : "Refund transaction completed successfully."
         );
         loadReturns();
+        handleCloseInspection();
         setTimeout(() => {
           setMessage("");
         }, 4000);
@@ -69,6 +104,20 @@ function VendorReturnManagement() {
           setMessage("");
         }, 4000);
       });
+  };
+
+  const handleApprove = () => {
+    if (!isChecklistComplete) return;
+    executeStatusUpdate(activeInspection.orderId, "APPROVED");
+  };
+
+  const handleRejectSubmit = (e) => {
+    e.preventDefault();
+    if (!rejectionReasonInput.trim()) {
+      alert("Please specify the reason for rejection.");
+      return;
+    }
+    executeStatusUpdate(activeInspection.orderId, "REJECTED", rejectionReasonInput);
   };
 
   return (
@@ -86,7 +135,7 @@ function VendorReturnManagement() {
             <span>Return & Refund Management</span>
           </h1>
           <p className="text-sm text-text-secondary mt-1.5 font-medium">
-            Review customer return claims, evaluate reasons, and process refund payouts.
+            Inspect customer return claims, validate product compliance checkpoints, and release refund credits.
           </p>
         </div>
 
@@ -175,28 +224,23 @@ function VendorReturnManagement() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2.5">
                             {status === "PENDING" && (
-                              <>
-                                <button
-                                  onClick={() => handleStatusUpdate(request.orderId, "APPROVED")}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent-secondary hover:opacity-90 text-white text-xs font-bold transition-all cursor-pointer shadow-sm shadow-accent-secondary/10"
-                                >
-                                  <Check size={13} />
-                                  <span>Approve</span>
-                                </button>
-                                <button
-                                  onClick={() => handleStatusUpdate(request.orderId, "REJECTED")}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/30 text-accent-danger hover:text-white text-xs font-bold transition-all cursor-pointer"
-                                >
-                                  <X size={13} />
-                                  <span>Reject</span>
-                                </button>
-                              </>
+                              <button
+                                onClick={() => handleOpenInspection(request)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent-primary hover:opacity-90 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
+                              >
+                                <ClipboardList size={13} />
+                                <span>Inspect & Validate</span>
+                              </button>
                             )}
 
                             {status === "APPROVED" && (
                               <button
-                                onClick={() => handleStatusUpdate(request.orderId, "REFUND_PROCESSED")}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-accent-primary/15"
+                                onClick={() => {
+                                  if (window.confirm("Do you want to process the refund transaction?")) {
+                                    executeStatusUpdate(request.orderId, "REFUND_PROCESSED");
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-primary hover:opacity-90 text-white text-xs font-bold transition-all cursor-pointer shadow-md"
                               >
                                 <CreditCard size={13} />
                                 <span>Process Refund</span>
@@ -226,6 +270,154 @@ function VendorReturnManagement() {
         </div>
 
       </div>
+
+      {/* INSPECTION & VALIDATION MODAL */}
+      {activeInspection && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-bg-secondary border border-glass-border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="p-5 border-b border-glass-border bg-bg-tertiary flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="text-accent-primary" size={18} />
+                <h3 className="font-bold text-sm text-text-primary">Return Request Inspection</h3>
+              </div>
+              <button
+                onClick={handleCloseInspection}
+                className="text-text-muted hover:text-text-primary text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[70vh] overflow-y-auto flex flex-col gap-5">
+              
+              {/* Product Info */}
+              <div className="p-4 bg-glass/5 border border-glass-border rounded-xl">
+                <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider block">Customer Name</span>
+                <span className="font-bold text-xs text-text-primary">{activeInspection.customerName}</span>
+                
+                <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider block mt-3">Product Claim</span>
+                <span className="font-bold text-xs text-text-primary">{activeInspection.productName}</span>
+
+                <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider block mt-3">Reported Reason</span>
+                <span className="inline-flex mt-1 text-[10px] font-semibold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded border border-orange-400/20">
+                  {activeInspection.reason?.replace(/_/g, " ")}
+                </span>
+              </div>
+
+              {/* Customer description statement */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Customer Description Statement</span>
+                <div className="p-4 rounded-xl border border-glass-border bg-bg-tertiary text-xs italic text-text-secondary leading-relaxed">
+                  "{activeInspection.description || "No description provided."}"
+                </div>
+              </div>
+
+              {/* Interactive Checklist */}
+              {!showRejectForm && (
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider flex items-center gap-1.5">
+                    <ClipboardList size={14} className="text-accent-primary" />
+                    <span>Product Validation Checklist (All Required)</span>
+                  </span>
+
+                  <div className="flex flex-col gap-2.5">
+                    {/* Item 1 */}
+                    <label className="flex items-start gap-3 p-3 rounded-xl border border-glass-border/60 hover:bg-glass/5 cursor-pointer transition-colors text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={validationChecklist.skuMatched}
+                        onChange={() => handleChecklistChange("skuMatched")}
+                        className="mt-0.5 rounded accent-accent-primary cursor-pointer"
+                      />
+                      <span>Verify returned product matches original order details.</span>
+                    </label>
+
+                    {/* Item 2 */}
+                    <label className="flex items-start gap-3 p-3 rounded-xl border border-glass-border/60 hover:bg-glass/5 cursor-pointer transition-colors text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={validationChecklist.defectConfirmed}
+                        onChange={() => handleChecklistChange("defectConfirmed")}
+                        className="mt-0.5 rounded accent-accent-primary cursor-pointer"
+                      />
+                      <span>Confirm that defect description corresponds to item state.</span>
+                    </label>
+
+                    {/* Item 3 */}
+                    <label className="flex items-start gap-3 p-3 rounded-xl border border-glass-border/60 hover:bg-glass/5 cursor-pointer transition-colors text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={validationChecklist.policyWindowValid}
+                        onChange={() => handleChecklistChange("policyWindowValid")}
+                        className="mt-0.5 rounded accent-accent-primary cursor-pointer"
+                      />
+                      <span>Verify return request complies with merchant policies.</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection Form Input */}
+              {showRejectForm && (
+                <form onSubmit={handleRejectSubmit} className="flex flex-col gap-3 animate-in slide-in-from-bottom-2">
+                  <span className="text-[10px] uppercase font-bold text-accent-danger tracking-wider">Specify Rejection Reason *</span>
+                  <textarea
+                    rows={3}
+                    required
+                    value={rejectionReasonInput}
+                    onChange={(e) => setRejectionReasonInput(e.target.value)}
+                    placeholder="Provide a detailed explanation to the customer explaining why the claim was denied..."
+                    className="w-full rounded-xl border border-glass-border bg-glass/5 text-xs text-text-primary px-3 py-2.5 focus:outline-none focus:border-accent-danger transition-colors resize-none"
+                  />
+                  <div className="flex gap-2.5 mt-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectForm(false)}
+                      className="px-4 py-2 rounded-lg bg-bg-tertiary border border-glass-border text-xs font-bold text-text-secondary cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-lg bg-accent-danger hover:opacity-90 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Confirm Reject
+                    </button>
+                  </div>
+                </form>
+              )}
+
+            </div>
+
+            {/* Modal Footer Controls */}
+            {!showRejectForm && (
+              <div className="p-5 border-t border-glass-border bg-bg-tertiary flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowRejectForm(true)}
+                  className="px-4 py-2.5 rounded-xl bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/20 text-accent-danger hover:text-white text-xs font-bold transition-all cursor-pointer"
+                >
+                  Reject Claim
+                </button>
+                <button
+                  type="button"
+                  disabled={!isChecklistComplete}
+                  onClick={handleApprove}
+                  className="px-5 py-2.5 rounded-xl bg-accent-secondary hover:opacity-90 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shadow-accent-secondary/15"
+                >
+                  <Check size={14} />
+                  <span>Approve & Close</span>
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

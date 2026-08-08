@@ -21,6 +21,10 @@ export default function WarehousePickPack() {
 
       const warehouseStates = ['READY_FOR_WAREHOUSE', 'ALLOCATED', 'PICKED', 'PACKED', 'READY_TO_SHIP'];
       const filtered = (oRes.data || []).filter((o) => warehouseStates.includes(o.trackingStatus));
+      
+      // Sort stably by orderDate descending
+      filtered.sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
+
       setOrders(filtered);
 
       // Pre-select first warehouse for ready orders
