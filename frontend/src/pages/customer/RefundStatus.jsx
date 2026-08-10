@@ -17,6 +17,23 @@ import {
 } from "lucide-react";
 import { getOrderById, getReturnRequest } from "../../api/orders";
 
+const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return "";
+  try {
+    const date = new Date(dateTimeString);
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+  } catch (e) {
+    return dateTimeString;
+  }
+};
+
 function RefundStatus() {
   const { id } = useParams();
 
@@ -88,8 +105,8 @@ function RefundStatus() {
 
   // Process timeline state
   const reqStatus = (returnRequest?.status || "PENDING").toUpperCase();
-  const isApproved = reqStatus === "APPROVED" || reqStatus === "COMPLETED" || reqStatus === "SUCCESS";
-  const isCompleted = reqStatus === "COMPLETED" || reqStatus === "SUCCESS";
+  const isApproved = reqStatus === "APPROVED" || reqStatus === "COMPLETED" || reqStatus === "SUCCESS" || reqStatus === "REFUND_PROCESSED";
+  const isCompleted = reqStatus === "COMPLETED" || reqStatus === "SUCCESS" || reqStatus === "REFUND_PROCESSED";
   const isRejected = reqStatus === "REJECTED";
 
   return (
@@ -207,6 +224,22 @@ function RefundStatus() {
                     {reqStatus}
                   </span>
                 </div>
+                {returnRequest?.requestDate && (
+                  <div className="flex justify-between py-1 border-b border-glass-border/30">
+                    <span className="text-text-secondary font-medium">Requested On</span>
+                    <span className="font-semibold text-text-primary font-mono">
+                      {formatDateTime(returnRequest.requestDate)}
+                    </span>
+                  </div>
+                )}
+                {returnRequest?.updatedAt && (
+                  <div className="flex justify-between py-1 border-b border-glass-border/30">
+                    <span className="text-text-secondary font-medium">Last Updated</span>
+                    <span className="font-semibold text-text-primary font-mono">
+                      {formatDateTime(returnRequest.updatedAt)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1">
                   <span className="text-text-secondary font-medium">Est. Processing</span>
                   <span className="font-semibold text-text-primary">
@@ -237,6 +270,11 @@ function RefundStatus() {
                     <p className="text-xs text-text-secondary mt-0.5 font-medium">
                       Your return request has been submitted and registered successfully in our system.
                     </p>
+                    {returnRequest?.requestDate && (
+                      <span className="text-[10px] text-text-muted mt-1 block font-mono">
+                        {formatDateTime(returnRequest.requestDate)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -262,6 +300,11 @@ function RefundStatus() {
                         ? "Merchant verified the request details and approved the return."
                         : "Merchant operations team is evaluating the return reason and description details."}
                     </p>
+                    {returnRequest?.updatedAt && (isApproved || isRejected) && (
+                      <span className="text-[10px] text-text-muted mt-1 block font-mono">
+                        {formatDateTime(returnRequest.updatedAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -283,6 +326,11 @@ function RefundStatus() {
                         ? "Refund transaction executed. Funds have been sent back to your selected method."
                         : "Awaiting approval approval and transaction confirmation."}
                     </p>
+                    {returnRequest?.updatedAt && isCompleted && (
+                      <span className="text-[10px] text-text-muted mt-1 block font-mono">
+                        {formatDateTime(returnRequest.updatedAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
 

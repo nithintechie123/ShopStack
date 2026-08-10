@@ -398,9 +398,11 @@ export default function OrderTracker({ order, onStatusUpdate, isCustomer = true,
               </div>
               <div>
                 <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mb-1">Payment Status</span>
-                <span className={`inline-flex items-center text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                 <span className={`inline-flex items-center text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
                   order.paymentStatus === 'PAID'
                     ? 'bg-accent-secondary/10 border-accent-secondary/20 text-accent-secondary'
+                    : order.paymentStatus === 'REFUNDED'
+                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
                     : 'bg-accent-warning/10 border-accent-warning/20 text-accent-warning'
                 }`}>
                   {order.paymentStatus || 'PAID'}

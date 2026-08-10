@@ -252,6 +252,9 @@ public class OrderService {
                     throw new RuntimeException("Orders that are already shipped or delivered cannot be cancelled.");
                 }
             }
+            if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                order.setPaymentStatus("REFUNDED");
+            }
         }
 
 

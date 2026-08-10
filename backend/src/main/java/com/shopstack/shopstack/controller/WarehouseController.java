@@ -77,10 +77,7 @@ public class WarehouseController {
                     .body(Map.of("error", ex.getMessage()));
         }
     }
-    @GetMapping("/test")
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("Warehouse API Working");
-    }
+
 
     @PutMapping("/inventory/{inventoryId}")
     public ResponseEntity<?> updateInventory(
