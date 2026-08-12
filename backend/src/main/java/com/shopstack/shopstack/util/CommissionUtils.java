@@ -12,7 +12,7 @@ public class CommissionUtils {
      * Commission Profit = price * quantity * commissionRate
      */
     public static BigDecimal calculateCommission(BigDecimal price, int quantity, BigDecimal commissionRate) {
-        if (price == null || quantity <= 0) {
+        if (price == null || quantity <= 0 || commissionRate == null) {
             return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
         BigDecimal rate = safeCommissionRate(commissionRate);
@@ -25,7 +25,7 @@ public class CommissionUtils {
      * Commission Profit = totalSales * commissionRate
      */
     public static BigDecimal calculateCommission(BigDecimal totalSales, BigDecimal commissionRate) {
-        if (totalSales == null || totalSales.compareTo(BigDecimal.ZERO) <= 0) {
+        if (totalSales == null || totalSales.compareTo(BigDecimal.ZERO) <= 0 || commissionRate == null) {
             return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
         BigDecimal rate = safeCommissionRate(commissionRate);
