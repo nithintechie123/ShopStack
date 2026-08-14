@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Database Service (PostgreSQL)
+  db:
+    image: postgres:17-alpine
+    container_name: shopstack-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shopstack
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shopstack"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service (Spring Boot)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shopstack-backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shopstack
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SHOPSTACK_JWT_SECRET: yoursupersecurejwtsecretkeymustbeatleast256bitslonghere
+      SHOPSTACK_JWT_EXPIRATION: 86400000
+      RAZORPAY_KEY_ID: test_razorpay_key
+      RAZORPAY_KEY_SECRET: test_razorpay_secret
+      # Setup upload dir inside container
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend Service (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8081
+        - VITE_GOOGLE_CLIENT_ID=
+        - VITE_EMAILJS_SERVICE_ID=
+        - VITE_EMAILJS_TEMPLATE_ID=
+        - VITE_EMAILJS_PUBLIC_KEY=
+    container_name: shopstack-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_uploads:
