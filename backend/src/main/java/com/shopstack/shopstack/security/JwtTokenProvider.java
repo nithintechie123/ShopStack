@@ -45,6 +45,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generateToken(String username, String userId, List<String> roles) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .claim("roles", roles)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(key)
+                .compact();
+    }
+
     public String getUsernameFromJwt(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(key)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getAllVendors, updateVendorStatus, updateAvatar } from '../../api/vendors';
+import { getAllVendors, updateVendorStatus, updateAvatar, removeAvatar } from '../../api/vendors';
 import { uploadProductImage } from '../../api/upload';
 import {
   Store,
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   RefreshCw,
   Camera,
+  Trash2,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = ['ALL', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED'];
@@ -54,8 +55,23 @@ export default function AdminProfile() {
       const url = res.data.imageUrl;
       await updateAvatar(url);
       updateUser({ profilePictureUrl: url });
+      setSuccessMsg('Profile picture updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3500);
     } catch (err) {
       console.error("Failed to upload profile photo:", err);
+      setError('Failed to upload profile photo.');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await removeAvatar();
+      updateUser({ profilePictureUrl: null });
+      setSuccessMsg('Profile picture removed successfully!');
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (err) {
+      console.error("Failed to remove profile photo:", err);
+      setError(err.response?.data?.error || 'Failed to remove profile photo.');
     }
   };
 
@@ -184,6 +200,15 @@ export default function AdminProfile() {
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </label>
             </div>
+            {avatar && (
+              <button
+                type="button"
+                onClick={handleRemoveAvatar}
+                className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-accent-danger hover:text-white bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/20 hover:border-transparent px-2.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer animate-in fade-in"
+              >
+                <Trash2 size={11} /> Remove Photo
+              </button>
+            )}
             <div className="text-center">
               <p className="font-bold text-text-primary text-sm">{user?.firstName} {user?.lastName}</p>
               <p className="text-[10px] text-text-muted mt-0.5">{user?.email}</p>

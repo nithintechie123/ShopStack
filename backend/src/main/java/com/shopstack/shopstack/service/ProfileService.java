@@ -34,7 +34,17 @@ public class ProfileService {
     @Transactional
     public CustomerProfile updateCustomerProfile(UUID userId, CustomerProfile updated) {
         CustomerProfile existing = getCustomerProfile(userId);
-        existing.setPhone(updated.getPhone());
+        
+        if (updated.getPhone() != null && !updated.getPhone().trim().isEmpty()) {
+            String phone = updated.getPhone().trim();
+            if (!phone.matches("\\d{1,10}")) {
+                throw new IllegalArgumentException("Phone number must contain only numeric digits and not exceed 10 digits.");
+            }
+            existing.setPhone(phone);
+        } else {
+            existing.setPhone(null);
+        }
+
         existing.setShippingAddress(updated.getShippingAddress());
         existing.setBillingAddress(updated.getBillingAddress());
         return customerProfileRepository.save(existing);

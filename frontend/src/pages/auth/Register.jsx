@@ -6,6 +6,7 @@ import AuthCarousel from '../../components/auth/AuthCarousel';
 
 const INITIAL = {
   firstName: '', lastName: '', email: '', password: '',
+  confirmPassword: '',
   role: 'CUSTOMER', storeName: '', storeDescription: '',
   businessLicense: '', taxId: '',
 };
@@ -19,24 +20,58 @@ export default function Register() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    let value = e.target.value;
+    if (e.target.name === 'firstName' || e.target.name === 'lastName') {
+      value = value.replace(/\s/g, '');
+    }
+    setForm((prev) => ({ ...prev, [e.target.name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    const cleanFirstName = form.firstName.trim();
+    const cleanLastName = form.lastName.trim();
     const cleanEmail = form.email.trim();
+
+    // Validate Name Formats (Only alphabetical characters, no spaces)
+    const nameRegex = /^[A-Za-z]+$/;
+    if (!nameRegex.test(cleanFirstName) || !nameRegex.test(cleanLastName)) {
+      setError('First name and last name must contain only alphabetic characters (no spaces allowed).');
+      return;
+    }
+
+    // Validate Email Format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanEmail)) {
       setError('Please enter a valid email address (e.g. user@example.com).');
       return;
     }
 
+    // Validate Password Min Length
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    // Validate Passwords Match
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const registrationData = { ...form, email: cleanEmail };
+      const { confirmPassword, ...apiData } = form;
+      const registrationData = {
+        ...apiData,
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        email: cleanEmail
+      };
       await register(registrationData);
       setSuccess('Account created! You can now sign in.');
       setTimeout(() => navigate('/login'), 1800);
@@ -180,6 +215,24 @@ export default function Register() {
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reg-confirm-password" className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Confirm Password</label>
+                <div className="relative">
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input
+                    id="reg-confirm-password"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm py-3 pl-11 pr-10 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow"
+                    placeholder="Confirm your password"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    minLength={6}
+                    required
+                  />
                 </div>
               </div>
 

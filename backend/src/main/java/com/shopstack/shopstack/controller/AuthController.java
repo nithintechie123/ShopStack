@@ -114,4 +114,32 @@ public class AuthController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody Map<String, String> request) {
+        try {
+            String idToken = request.get("idToken");
+            User user = authService.loginWithGoogle(idToken);
+            String token = authService.generateLocalTokenForUser(user);
+
+            LoginResponse response = LoginResponse.builder()
+                    .token(token)
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .role(user.getRole().name())
+                    .profilePictureUrl(user.getProfilePictureUrl())
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (DisabledException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(403).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+    }
 }

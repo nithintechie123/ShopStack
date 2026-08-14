@@ -27,6 +27,9 @@ export const updateVendorCommission = (id, commissionRate) =>
 export const updateAvatar = (avatarUrl) =>
   api.put('/api/profiles/avatar', { avatarUrl });
 
+export const removeAvatar = () =>
+  api.delete('/api/profiles/avatar');
+
 export const getCustomerCount=()=>
   api.get('/api/admin/customers/count');
 

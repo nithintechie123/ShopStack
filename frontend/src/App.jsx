@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { ProtectedRoute, RoleRoute } from './components/guards/ProtectedRoute';
+import { ProtectedRoute, RoleRoute, GuestRoute } from './components/guards/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -31,6 +31,7 @@ import WarehousePickPack from './pages/warehouse/WarehousePickPack';
 import WarehouseShipment from './pages/warehouse/WarehouseShipment';
 import WarehouseStockMovement from './pages/warehouse/WarehouseStockMovement';
 import WarehouseAnalytics from './pages/warehouse/WarehouseAnalytics';
+import WarehouseProfile from './pages/warehouse/WarehouseProfile';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import Profile from './pages/customer/Profile';
 import Orders from './pages/customer/Orders';
@@ -63,10 +64,15 @@ export default function App() {
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/cart" element={<Layout><Cart /></Layout>} />
               <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
-              <Route path="/login" element={<Layout><Login /></Layout>} />
-              <Route path="/register" element={<Layout><Register /></Layout>} />
-              <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
               <Route path="/unauthorized" element={<Layout><Unauthorized /></Layout>} />
+
+              {/* Guest Only Routes */}
+              <Route element={<GuestRoute />}>
+                <Route path="/login" element={<Layout><Login /></Layout>} />
+                <Route path="/register" element={<Layout><Register /></Layout>} />
+                <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+                <Route path="/warehouse/login" element={<Layout><WarehouseLogin /></Layout>} />
+              </Route>
 
               {/* Vendor Routes */}
               <Route element={<RoleRoute role="VENDOR" />}>
@@ -100,7 +106,7 @@ export default function App() {
                 <Route path="/admin/edit-warehouse/:id" element={<Layout><WarehouseEdit /></Layout>} />
               </Route>
 
-              <Route path="/warehouse/login" element={<Layout><WarehouseLogin /></Layout>} />
+
               <Route element={<RoleRoute role="WAREHOUSE_STAFF" />}>
                 <Route path="/warehouse" element={<WarehouseLayout />}>
                   <Route path="dashboard" element={<WarehouseDashboard />} />
@@ -110,6 +116,7 @@ export default function App() {
                   <Route path="shipment" element={<WarehouseShipment />} />
                   <Route path="stock-movement" element={<WarehouseStockMovement />} />
                   <Route path="analytics" element={<WarehouseAnalytics />} />
+                  <Route path="profile" element={<WarehouseProfile />} />
                 </Route>
               </Route>
 

@@ -56,6 +56,13 @@ public class AuthService {
             throw new IllegalArgumentException("Email is already registered!");
         }
 
+        if (request.getFirstName() == null || !request.getFirstName().trim().matches("[A-Za-z]+")) {
+            throw new IllegalArgumentException("First name must contain only alphabetic characters and no spaces.");
+        }
+        if (request.getLastName() == null || !request.getLastName().trim().matches("[A-Za-z]+")) {
+            throw new IllegalArgumentException("Last name must contain only alphabetic characters and no spaces.");
+        }
+
         Role role;
         try {
             role = Role.valueOf(request.getRole().toUpperCase());
@@ -191,5 +198,75 @@ public class AuthService {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public User loginWithGoogle(String idToken) {
+        if (idToken == null || idToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Google ID token is required.");
+        }
+
+        java.util.Map<String, Object> tokenInfo;
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+            // Suppress warnings for raw map conversion
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> info = restTemplate.getForObject(url, java.util.Map.class);
+            tokenInfo = info;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to verify Google ID token: " + e.getMessage());
+        }
+
+        if (tokenInfo == null || !tokenInfo.containsKey("email")) {
+            throw new IllegalArgumentException("Invalid Google ID token.");
+        }
+
+        String email = (String) tokenInfo.get("email");
+        String firstName = (String) tokenInfo.get("given_name");
+        String lastName = (String) tokenInfo.get("family_name");
+        String picture = (String) tokenInfo.get("picture");
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            // Register new user as CUSTOMER
+            user = User.builder()
+                    .email(email)
+                    .passwordHash("") // No password hash for OAuth users
+                    .firstName(firstName != null ? firstName : "Google")
+                    .lastName(lastName != null ? lastName : "User")
+                    .role(Role.CUSTOMER)
+                    .isActive(true)
+                    .profilePictureUrl(picture)
+                    .build();
+
+            User savedUser = userRepository.save(user);
+
+            CustomerProfile customerProfile = CustomerProfile.builder()
+                    .user(savedUser)
+                    .build();
+            customerProfileRepository.save(customerProfile);
+            return savedUser;
+        }
+
+        if (!user.isActive()) {
+            throw new org.springframework.security.authentication.DisabledException("Your account has been suspended. Please contact admin.");
+        }
+
+        // Update profile picture if it was changed on Google
+        if (picture != null && (user.getProfilePictureUrl() == null || user.getProfilePictureUrl().isEmpty())) {
+            user.setProfilePictureUrl(picture);
+            userRepository.save(user);
+        }
+
+        return user;
+    }
+
+    public String generateLocalTokenForUser(User user) {
+        return tokenProvider.generateToken(
+                user.getEmail(),
+                user.getId().toString(),
+                java.util.List.of("ROLE_" + user.getRole().name())
+        );
     }
 }

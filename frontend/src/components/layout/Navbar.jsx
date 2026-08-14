@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -21,6 +21,9 @@ export default function Navbar() {
   const { cartItems, removeFromCart, cartCount, cartSubtotal } = useCart();
   const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
 
   const avatar = user?.profilePictureUrl;
 
@@ -96,16 +99,18 @@ export default function Navbar() {
           </div>
 
           {/* Search Bar (Center/Desktop) */}
-          <div className="hidden sm:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input
-                type="text"
-                placeholder="Search products, brands, or stores..."
-                className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-xs px-3 py-2 pl-9 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow focus:bg-bg-secondary"
-              />
+          {!isAuthPage && (
+            <div className="hidden sm:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search products, brands, or stores..."
+                  className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-xs px-3 py-2 pl-9 outline-none transition-all duration-300 placeholder-text-muted focus:border-accent-primary focus:ring-2 focus:ring-accent-primary-glow focus:bg-bg-secondary"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Right side actions: Cart & Profile */}
           <div className="flex items-center gap-3 shrink-0">

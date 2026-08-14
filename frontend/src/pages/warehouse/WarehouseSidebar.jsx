@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Database, Package, Truck, Activity, BarChart3, ArrowLeft, LogOut } from 'lucide-react';
+import { LayoutDashboard, Database, Package, Truck, Activity, BarChart3, ArrowLeft, LogOut, User } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/warehouse/dashboard', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Shipment Preparation', to: '/warehouse/shipment', icon: Activity },
   { label: 'Stock Movement', to: '/warehouse/stock-movement', icon: ArrowLeft },
   { label: 'Warehouse Analytics', to: '/warehouse/analytics', icon: BarChart3 },
+  { label: 'My Profile', to: '/warehouse/profile', icon: User },
 ];
 
 export default function WarehouseSidebar() {

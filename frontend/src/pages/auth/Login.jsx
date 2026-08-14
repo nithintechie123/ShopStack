@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ShoppingBag, AlertCircle, ShieldAlert, X, Eye, EyeOff } from 'lucide-react';
 import AuthCarousel from '../../components/auth/AuthCarousel';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +13,76 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isSuspendedModalOpen, setIsSuspendedModalOpen] = useState(false);
   const [suspendedErrorMsg, setSuspendedErrorMsg] = useState('');
+
+  useEffect(() => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!googleClientId) return;
+
+    let intervalId;
+    
+    const initializeGoogleBtn = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            setError('');
+            setLoading(true);
+            try {
+              const user = await loginWithGoogle(response.credential);
+              switch (user.role) {
+                case 'ADMIN':
+                  navigate('/admin');
+                  break;
+                case 'VENDOR':
+                  navigate('/vendor');
+                  break;
+                case 'WAREHOUSE_STAFF':
+                  navigate('/warehouse/dashboard');
+                  break;
+                default:
+                  navigate('/');
+                  break;
+              }
+            } catch (err) {
+              const errorMsg = err.response?.data?.error || 'Google Sign-In failed.';
+              if (err.response?.status === 403) {
+                setSuspendedErrorMsg(errorMsg);
+                setIsSuspendedModalOpen(true);
+              } else {
+                setError(errorMsg);
+              }
+            } finally {
+              setLoading(false);
+            }
+          },
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin-btn'),
+          { 
+            theme: 'filled_blue', 
+            size: 'large', 
+            shape: 'pill',
+            width: '382',
+            logo_alignment: 'center',
+            text: 'continue_with'
+          }
+        );
+        
+        if (intervalId) clearInterval(intervalId);
+      }
+    };
+
+    if (window.google) {
+      initializeGoogleBtn();
+    } else {
+      intervalId = setInterval(initializeGoogleBtn, 300);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [loginWithGoogle, navigate]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -57,6 +127,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 relative overflow-hidden bg-bg-primary">
@@ -152,6 +223,20 @@ export default function Login() {
                 {loading ? 'Signing in…' : 'Sign In'}
               </button>
             </form>
+
+            {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+              <>
+                <div className="flex items-center gap-3 my-6">
+                  <div className="h-[1px] flex-1 bg-glass-border/40"></div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted shrink-0">Or continue with</span>
+                  <div className="h-[1px] flex-1 bg-glass-border/40"></div>
+                </div>
+
+                <div className="flex justify-center w-full min-h-[40px]">
+                  <div id="google-signin-btn" className="w-full flex justify-center"></div>
+                </div>
+              </>
+            )}
 
             <p className="text-center text-sm text-text-muted mt-6">
               Don&apos;t have an account?{' '}

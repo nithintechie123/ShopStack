@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getCustomerProfile, updateCustomerProfile, updateAvatar } from '../../api/vendors';
+import { getCustomerProfile, updateCustomerProfile, updateAvatar, removeAvatar } from '../../api/vendors';
 import { uploadProductImage } from '../../api/upload';
-import { User, Phone, MapPin, CheckCircle2, AlertCircle, Camera } from 'lucide-react';
+import { User, Phone, MapPin, CheckCircle2, AlertCircle, Camera, Trash2 } from 'lucide-react';
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -25,8 +25,23 @@ export default function Profile() {
       const url = res.data.imageUrl;
       await updateAvatar(url);
       updateUser({ profilePictureUrl: url });
+      setSuccess('Profile picture updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error("Failed to upload profile photo:", err);
+      setError('Failed to upload profile photo.');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await removeAvatar();
+      updateUser({ profilePictureUrl: null });
+      setSuccess('Profile picture removed successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error("Failed to remove profile photo:", err);
+      setError(err.response?.data?.error || 'Failed to remove profile photo.');
     }
   };
 
@@ -54,9 +69,18 @@ export default function Profile() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    
+    if (phone) {
+      const cleanPhone = phone.trim();
+      if (!/^\d{1,10}$/.test(cleanPhone)) {
+        setError('Phone number must contain only numeric digits and not exceed 10 digits.');
+        return;
+      }
+    }
+
     setUpdating(true);
     try {
-      const data = { phone, shippingAddress, billingAddress };
+      const data = { phone: phone ? phone.trim() : '', shippingAddress, billingAddress };
       const res = await updateCustomerProfile(data);
       setPhone(res.data.phone || '');
       setShippingAddress(res.data.shippingAddress || '');
@@ -105,7 +129,7 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left Column: Profile Picture Card */}
           <div className="flex flex-col gap-5">
-            <div className="p-6 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4 items-center">
+            <div className="p-6 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md flex flex-col gap-4 items-center animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="relative group w-24 h-24">
                 {avatar ? (
                   <img src={avatar} alt="Profile" className="w-full h-full rounded-full object-cover border border-glass-border shadow-md" />
@@ -120,11 +144,20 @@ export default function Profile() {
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
+              {avatar && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent-danger hover:text-white bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/20 hover:border-transparent px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+                >
+                  <Trash2 size={12} /> Remove Photo
+                </button>
+              )}
               <div className="text-center">
                 <p className="font-bold text-text-primary text-base">{user?.firstName} {user?.lastName}</p>
                 <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
                 <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent-secondary/10 border border-accent-secondary/25 text-accent-secondary">
-                  Customer
+                  {user?.role === 'WAREHOUSE_STAFF' ? 'Warehouse Staff' : user?.role?.charAt(0) + user?.role?.slice(1).toLowerCase()}
                 </span>
               </div>
             </div>
@@ -153,8 +186,8 @@ export default function Profile() {
                 <input 
                   type="text" 
                   value={phone} 
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. +91 9988776655" 
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="e.g. 9988776655" 
                   className="w-full bg-bg-tertiary/50 border border-glass-border rounded-lg text-text-primary text-sm px-4 py-3 outline-none transition-colors duration-300 focus:border-accent-primary"
                 />
               </div>

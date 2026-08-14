@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getVendorProfile, updateVendorProfile, updateAvatar } from '../../api/vendors';
+import { getVendorProfile, updateVendorProfile, updateAvatar, removeAvatar } from '../../api/vendors';
 import { uploadProductImage } from '../../api/upload';
 import {
   Store,
@@ -14,6 +14,7 @@ import {
   CalendarDays,
   ShieldCheck,
   Camera,
+  Trash2,
 } from 'lucide-react';
 
 const STATUS_META = {
@@ -50,8 +51,23 @@ export default function VendorProfile() {
       const url = res.data.imageUrl;
       await updateAvatar(url);
       updateUser({ profilePictureUrl: url });
+      setSuccess('Profile picture updated successfully!');
+      setTimeout(() => setSuccess(''), 3500);
     } catch (err) {
       console.error("Failed to upload profile photo:", err);
+      setError('Failed to upload profile photo.');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      await removeAvatar();
+      updateUser({ profilePictureUrl: null });
+      setSuccess('Profile picture removed successfully!');
+      setTimeout(() => setSuccess(''), 3500);
+    } catch (err) {
+      console.error("Failed to remove profile photo:", err);
+      setError(err.response?.data?.error || 'Failed to remove profile photo.');
     }
   };
 
@@ -156,6 +172,15 @@ export default function VendorProfile() {
                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                  </label>
                </div>
+               {avatar && (
+                 <button
+                   type="button"
+                   onClick={handleRemoveAvatar}
+                   className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-accent-danger hover:text-white bg-accent-danger/10 hover:bg-accent-danger border border-accent-danger/20 hover:border-transparent px-2.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+                 >
+                   <Trash2 size={11} /> Remove Photo
+                 </button>
+               )}
                <div className="text-center">
                  <p className="font-bold text-text-primary text-base">{user?.firstName} {user?.lastName}</p>
                  <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>

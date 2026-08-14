@@ -91,4 +91,16 @@ public class ProfileController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/avatar")
+    public ResponseEntity<?> removeAvatar() {
+        try {
+            User user = getCurrentUser();
+            user.setProfilePictureUrl(null);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Profile picture removed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

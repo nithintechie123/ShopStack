@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, Inbox } from 'lucide-react';
 import { forgotPassword, resetPassword } from '../../api/auth';
+import { sendOtpEmail } from '../../api/email';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -32,8 +33,15 @@ export default function ForgotPassword() {
     try {
       const response = await forgotPassword(cleanEmail);
       // In development mode, the backend returns the token directly
-      if (response.data?.resetToken) {
-        setDevOtp(response.data.resetToken);
+      const otp = response.data?.resetToken;
+      if (otp) {
+        setDevOtp(otp);
+        try {
+          await sendOtpEmail(cleanEmail, otp);
+        } catch (emailErr) {
+          console.error("Failed to send OTP email via EmailJS:", emailErr);
+          // Don't block the UI flow if the email fails, since the devOtp fallback is there
+        }
       }
       setStep(2);
     } catch (err) {
