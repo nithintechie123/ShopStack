@@ -118,13 +118,15 @@ Here is the progress we have made so far! All of these features are fully built 
 ### 🌟 Milestone 2: Carts, Checkouts & Payments
 *   **Shopping Cart & Wishlist:** Fully interactive cart and wishlist with automatic discount coupon calculation.
 *   **Multi-Step Checkout:** Form validation for billing/shipping addresses, and a step-by-step order tracking stepper.
-*   **Safe D### 🌟 Milestone 3: Fulfillment, Returns & Localization
+*   **Safe Database Transactions (Concurrency):** Programmed database locking on product stock to ensure that if a product is popular, we never sell more than we have!
+*   **Mock Payment Processor:** Simulated credit card and bank checking accounts to test orders.
+
+### 🌟 Milestone 3: Fulfillment, Returns & Localization
 *   **Fulfillment Pipeline:** Automated order transitions (`ALLOCATED` → `PICKED` → `PACKED` → `READY_TO_SHIP` → courier tracking statuses) using database-backed allocations.
 *   **Vendor Warehouses & Safety Cascades:** Enabled vendor-owned warehouse creation/management with server-side security. Cleaned up Admin warehouse actions to read-only list. Configured product deletion to cascade-clear dependency tables to prevent constraint violations.
 *   **Return Claims with Photo Proof:** Mandatory image upload for customer return requests with inspectable photo preview inside the vendor return validation modal.
 *   **Analytics Reports:** Implemented custom date-filtered sales, revenue, category, and vendor performance dashboards with graphs and CSV exports.
-*   **Indian Rupee (₹) Standardization:** Localized branding by swapping visual `$` icons with `IndianRupee` icons globally.a product photo when filing a return request, which vendors can inspect inside their validation modal.
-*   **Indian Rupee (₹) Localization:** Swapped all visual `DollarSign` icons for `IndianRupee` icons to align the platform layout with standard currency (`₹`) formatting.
+*   **Indian Rupee (₹) Standardization:** Localized branding by swapping visual `$` icons with `IndianRupee` icons globally.
 
 ### 🌟 Extra Polish & Enhancements
 *   **Razorpay Integration:** Full payment gateway integration with payment verification.
