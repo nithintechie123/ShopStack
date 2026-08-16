@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
   CartesianGrid
 } from 'recharts';
-import { ChevronLeft, LayoutGrid, DollarSign, Award } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, IndianRupee, Award } from 'lucide-react';
 
 const filterItems = [
   { label: 'Today', value: 'today' },
@@ -288,7 +288,7 @@ export default function CategoryAnalyticsReport() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
           <SummaryCard icon={LayoutGrid} title="Total Categories" value={computed.totalCategories} detail="Distinct product classes" />
           <SummaryCard icon={Award} title="Top Category" value={computed.bestCategory?.category || 'N/A'} detail="Highest GMV contributions" />
-          <SummaryCard icon={DollarSign} title="Platform Sales" value={formatCurrency(computed.totalRevenue)} detail="Cumulative category volume" />
+          <SummaryCard icon={IndianRupee} title="Platform Sales" value={formatCurrency(computed.totalRevenue)} detail="Cumulative category volume" />
         </div>
 
         <div className="space-y-6">

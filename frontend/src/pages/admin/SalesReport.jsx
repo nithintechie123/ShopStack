@@ -7,7 +7,7 @@ import ReportSkeleton from '../../components/admin/ReportSkeleton';
 import SummaryCard from '../../components/admin/SummaryCard';
 import AnalyticsTable from '../../components/admin/AnalyticsTable';
 import { SalesCategoryChart, SalesPieChart } from '../../components/admin/SalesCharts';
-import { DollarSign, ShoppingCart, Award, ChevronLeft, Layers } from 'lucide-react';
+import { IndianRupee, ShoppingCart, Award, ChevronLeft, Layers } from 'lucide-react';
 
 const filterItems = [
   { label: 'Today', value: 'today' },
@@ -179,7 +179,7 @@ export default function SalesReport() {
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               <SummaryCard icon={Layers} title="Products Sold" value={stats.productsSold} detail="Total quantity sold" trend={8} />
               <SummaryCard icon={ShoppingCart} title="Orders Completed" value={stats.completedOrders} detail="Total completed purchases" trend={stats.salesTrend} />
-              <SummaryCard icon={DollarSign} title="Avg. Order Value" value={formatCurrency(stats.avgOrderValue)} detail="Mean order purchase size" trend={5} />
+              <SummaryCard icon={IndianRupee} title="Avg. Order Value" value={formatCurrency(stats.avgOrderValue)} detail="Mean order purchase size" trend={5} />
               <SummaryCard icon={Award} title="Avg. Items / Order" value={stats.avgItemsPerOrder} detail="Units per checkout" trend={4} />
             </div>
 

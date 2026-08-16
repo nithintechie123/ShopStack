@@ -7,15 +7,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.shopstack.shopstack.model.*;
-import jakarta.validation.Valid;
 
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.shopstack.shopstack.repository.UserRepository;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.shopstack.shopstack.model.WarehouseInventory;
-
-
 
 @RestController
 @RequestMapping("/api/warehouse")
@@ -23,14 +25,27 @@ import com.shopstack.shopstack.model.WarehouseInventory;
 public class WarehouseController {
 
     private final WarehouseService warehouseService;
+    private final UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<?> createWarehouse(
             @Valid @RequestBody CreateWarehouseRequest request) {
 
         try {
+            UUID vendorUserId = null;
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (user.getRole() == Role.VENDOR) {
+                        vendorUserId = user.getId();
+                    }
+                }
+            }
 
-            Warehouse warehouse = warehouseService.createWarehouse(request);
+            Warehouse warehouse = warehouseService.createWarehouse(request, vendorUserId);
 
             return ResponseEntity.ok(warehouse);
 
@@ -121,16 +136,42 @@ public class WarehouseController {
 
     @GetMapping
     public ResponseEntity<List<Warehouse>> getAllWarehouses() {
-
-        List<Warehouse> warehouses = warehouseService.getAllWarehouses();
-
-        return ResponseEntity.ok(warehouses);
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (user.getRole() == Role.VENDOR) {
+                        return ResponseEntity.ok(warehouseService.getWarehousesByVendor(user.getId()));
+                    }
+                }
+            }
+            List<Warehouse> warehouses = warehouseService.getAllWarehouses();
+            return ResponseEntity.ok(warehouses);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @GetMapping("/{warehouseId}")
     public ResponseEntity<?> getWarehouseById(@PathVariable UUID warehouseId) {
         try {
             Warehouse warehouse = warehouseService.getWarehouseById(warehouseId);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (user.getRole() == Role.VENDOR) {
+                        if (warehouse.getVendor() == null || !warehouse.getVendor().getUser().getId().equals(user.getId())) {
+                            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized: You do not own this warehouse"));
+                        }
+                    }
+                }
+            }
             return ResponseEntity.ok(warehouse);
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest()
@@ -144,6 +185,20 @@ public class WarehouseController {
             @Valid @RequestBody UpdateWarehouseRequest request) {
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (user.getRole() == Role.VENDOR) {
+                        Warehouse existing = warehouseService.getWarehouseById(warehouseId);
+                        if (existing.getVendor() == null || !existing.getVendor().getUser().getId().equals(user.getId())) {
+                            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized: You do not own this warehouse"));
+                        }
+                    }
+                }
+            }
 
             Warehouse warehouse =
                     warehouseService.updateWarehouse(warehouseId, request);
@@ -215,6 +270,21 @@ public class WarehouseController {
     @DeleteMapping("/{warehouseId}")
     public ResponseEntity<?> deleteWarehouse(@PathVariable UUID warehouseId) {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (user.getRole() == Role.VENDOR) {
+                        Warehouse existing = warehouseService.getWarehouseById(warehouseId);
+                        if (existing.getVendor() == null || !existing.getVendor().getUser().getId().equals(user.getId())) {
+                            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized: You do not own this warehouse"));
+                        }
+                    }
+                }
+            }
+
             String message = warehouseService.deleteWarehouse(warehouseId);
             return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException ex) {

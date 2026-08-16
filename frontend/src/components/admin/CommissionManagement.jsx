@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Percent, DollarSign, Wallet, Store, Check, Edit2, ArrowUpRight, Calculator, ShieldCheck, RefreshCw, Filter, Sparkles } from 'lucide-react';
+import { Percent, IndianRupee, Wallet, Store, Check, Edit2, ArrowUpRight, Calculator, ShieldCheck, RefreshCw, Filter, Sparkles } from 'lucide-react';
 import { updateVendorCommission } from '../../api/vendors';
 import { Link } from 'react-router-dom';
 
@@ -112,7 +112,7 @@ export default function CommissionManagement({ vendors, setVendors, dashboardSta
 
         <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600">
-            <DollarSign size={22} />
+            <IndianRupee size={22} />
           </div>
           <div>
             <p className="font-display text-2xl font-extrabold text-emerald-600 leading-none">

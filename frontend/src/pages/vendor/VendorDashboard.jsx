@@ -4,10 +4,11 @@ import { getVendorProducts, createProduct, updateProduct, deleteProduct, submitP
 import { getVendorProfile } from '../../api/vendors';
 import { getVendorOrders, getVendorEarningsSummary, updateOrderStatus } from '../../api/orders';
 import { uploadProductImage } from '../../api/upload';
-import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2, DollarSign, TrendingUp, Percent, Wallet } from 'lucide-react';
+import { Plus, Package, CheckCircle, Clock, XCircle, Edit, Send, IndianRupee, Star, ShoppingBag, Truck, Eye, Layers, Trash2, DollarSign, TrendingUp, Percent, Wallet, MapPin } from 'lucide-react';
 import OrderTracker from '../../components/orders/OrderTracker';
 import InventoryManager from '../../components/inventory/InventoryManager';
 import VendorReturnManagement from "./VendorReturnManagement";
+import VendorWarehouseManager from '../../components/vendor/VendorWarehouseManager';
 
 const STATUS_META = {
   DRAFT:            { label: 'Draft',            cls: 'bg-text-secondary/10 border-text-secondary/20 text-text-secondary', Icon: Edit },
@@ -260,7 +261,7 @@ export default function VendorDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
                 <div className="flex items-center gap-4 p-5 rounded-xl border border-glass-border bg-glass/10 backdrop-blur-md">
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-accent-primary/10 text-accent-primary">
-                    <DollarSign size={20} />
+                    <IndianRupee size={20} />
                   </div>
                   <div>
                     <p className="font-display text-2xl font-extrabold text-text-primary leading-none">₹{totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
@@ -369,6 +370,17 @@ export default function VendorDashboard() {
           >
             <Package size={16} />
             <span>Returns & Refunds</span>
+          </button>
+          <button
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 relative -bottom-[1px] cursor-pointer ${
+              activeTab === "warehouses"
+                ? "border-accent-primary text-accent-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary"
+            }`}
+            onClick={() => setActiveTab("warehouses")}
+          >
+            <MapPin size={16} />
+            <span>My Warehouses</span>
           </button>
         </div>
 
@@ -735,7 +747,12 @@ export default function VendorDashboard() {
           <div className="flex flex-col gap-4">
               <VendorReturnManagement />
           </div>
-      )}
+        )}
+        {activeTab === "warehouses" && (
+          <div className="flex flex-col gap-4">
+              <VendorWarehouseManager />
+          </div>
+        )}
       </div>
     </div>
   );

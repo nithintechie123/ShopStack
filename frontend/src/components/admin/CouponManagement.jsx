@@ -18,7 +18,7 @@ import {
   Clock,
   Tag,
   Percent,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   AlertCircle,
   X,

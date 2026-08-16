@@ -29,6 +29,7 @@ public class WarehouseService {
     private final ProductRepository productRepository;
     private final StockMovementService stockMovementService;
     private final StockMovementRepository stockMovementRepository;
+    private final VendorProfileRepository vendorProfileRepository;
 
     @Transactional
     public String allocateOrder(AllocateOrderRequest request) {
@@ -96,10 +97,15 @@ public class WarehouseService {
         return "Order allocated successfully.";
     }
     @Transactional
-    public Warehouse createWarehouse(CreateWarehouseRequest request) {
+    public Warehouse createWarehouse(CreateWarehouseRequest request, UUID vendorUserId) {
 
         if (warehouseRepository.existsByWarehouseCode(request.getWarehouseCode())) {
             throw new RuntimeException("Warehouse code already exists.");
+        }
+
+        VendorProfile vendor = null;
+        if (vendorUserId != null) {
+            vendor = vendorProfileRepository.findByUserId(vendorUserId).orElse(null);
         }
 
         Warehouse warehouse = Warehouse.builder()
@@ -113,6 +119,7 @@ public class WarehouseService {
                 .contactNumber(request.getContactNumber())
                 .capacity(request.getCapacity())
                 .status(WarehouseStatus.ACTIVE)
+                .vendor(vendor)
                 .build();
 
         return warehouseRepository.save(warehouse);
@@ -348,6 +355,11 @@ public class WarehouseService {
     @Transactional(readOnly = true)
     public List<WarehouseInventory> getAllInventories() {
         return warehouseInventoryRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Warehouse> getWarehousesByVendor(UUID userId) {
+        return warehouseRepository.findByVendorUserId(userId);
     }
 
 }

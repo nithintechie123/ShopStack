@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     private final ProductRepository productRepository;
     private final VendorProfileRepository vendorProfileRepository;
     private final CategoryRepository categoryRepository;
@@ -237,6 +240,23 @@ public class ProductService {
         if (!isAdmin && !isOwnerVendor) {
             throw new SecurityException("Unauthorized: You cannot delete this product!");
         }
+
+        // Delete references to avoid FK constraint violations
+        entityManager.createNativeQuery("DELETE FROM warehouse_inventory WHERE product_id = :productId")
+                .setParameter("productId", productId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM stock_movements WHERE product_id = :productId")
+                .setParameter("productId", productId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM wishlist_items WHERE product_id = :productId")
+                .setParameter("productId", productId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM order_items WHERE product_id = :productId")
+                .setParameter("productId", productId)
+                .executeUpdate();
 
         productRepository.delete(existing);
     }

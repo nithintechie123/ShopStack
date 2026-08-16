@@ -56,6 +56,7 @@ public class ReturnRequestController {
                             orderId,
                             request.get("reason"),
                             request.get("description"),
+                            request.get("imageUrl"),
                             user);
 
             return ResponseEntity.ok(returnRequest);

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, Edit3, Trash2, Shield } from 'lucide-react';
-import { getWarehouses, deleteWarehouse } from '../../api/warehouse';
+import { Link } from 'react-router-dom';
+import { Shield, ChevronLeft } from 'lucide-react';
+import { getWarehouses } from '../../api/warehouse';
 
 export default function WarehouseList() {
-  const navigate = useNavigate();
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,16 +21,6 @@ export default function WarehouseList() {
   useEffect(() => {
     fetchWarehouses();
   }, []);
-
-  const onDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this warehouse? This will also remove associated inventory allocations.')) return;
-    try {
-      await deleteWarehouse(id);
-      fetchWarehouses();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete warehouse');
-    }
-  };
 
   const summary = useMemo(() => {
     const totalCapacity = warehouses.reduce((sum, w) => sum + (w.capacity || 0), 0);
@@ -54,11 +43,10 @@ export default function WarehouseList() {
         </div>
         <div>
           <Link
-            to="/admin/create-warehouse"
-            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white font-bold text-sm shadow-md shadow-accent-primary/10 hover:shadow-lg hover:shadow-accent-primary/25 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-98 cursor-pointer"
+            to="/admin"
+            className="inline-flex items-center gap-2 text-xs font-bold text-violet-700 hover:text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-xl px-4 py-2 border border-violet-100 transition-colors shrink-0 cursor-pointer shadow-sm"
           >
-            <PlusCircle size={16} />
-            <span>Create Warehouse</span>
+            <ChevronLeft size={16} /> Back to Dashboard
           </Link>
         </div>
       </div>
@@ -86,17 +74,16 @@ export default function WarehouseList() {
               <th className="px-6 py-4">Capacity</th>
               <th className="px-6 py-4">Manager</th>
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-glass-border/40">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-text-secondary">Loading warehouses...</td>
+                <td colSpan={6} className="px-6 py-12 text-center text-text-secondary">Loading warehouses...</td>
               </tr>
             ) : warehouses.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-text-secondary">No warehouses found.</td>
+                <td colSpan={6} className="px-6 py-12 text-center text-text-secondary">No warehouses found.</td>
               </tr>
             ) : (
               warehouses.map((warehouse) => (
@@ -121,24 +108,6 @@ export default function WarehouseList() {
                     }`}>
                       {warehouse.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        to={`/admin/edit-warehouse/${warehouse.id}`}
-                        className="inline-flex items-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
-                      >
-                        <Edit3 size={12} />
-                        <span>Edit</span>
-                      </Link>
-                      <button
-                        onClick={() => onDelete(warehouse.id)}
-                        className="inline-flex items-center gap-1 bg-accent-danger/10 hover:bg-accent-danger/20 text-accent-danger text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm"
-                      >
-                        <Trash2 size={12} />
-                        <span>Delete</span>
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))

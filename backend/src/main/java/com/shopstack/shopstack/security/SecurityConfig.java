@@ -55,13 +55,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/vendor/**")
                         .hasRole("VENDOR")
 
-                                // Admin creates, updates, and deletes warehouses
-                                .requestMatchers(HttpMethod.POST, "/api/warehouse").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.PUT, "/api/warehouse/*").hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/api/warehouse/*").hasRole("ADMIN")
-                                // Both ADMIN and WAREHOUSE_STAFF can read warehouses
-                                .requestMatchers(HttpMethod.GET, "/api/warehouse").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
-                                .requestMatchers(HttpMethod.GET, "/api/warehouse/*").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
+                                // Admin and Vendor creates, updates, and deletes warehouses
+                                .requestMatchers(HttpMethod.POST, "/api/warehouse").hasAnyRole("ADMIN", "VENDOR")
+                                .requestMatchers(HttpMethod.PUT, "/api/warehouse/*").hasAnyRole("ADMIN", "VENDOR")
+                                .requestMatchers(HttpMethod.DELETE, "/api/warehouse/*").hasAnyRole("ADMIN", "VENDOR")
+                                // Admin, Warehouse Staff, and Vendor can read warehouses
+                                .requestMatchers(HttpMethod.GET, "/api/warehouse").hasAnyRole("ADMIN", "WAREHOUSE_STAFF", "VENDOR")
+                                .requestMatchers(HttpMethod.GET, "/api/warehouse/*").hasAnyRole("ADMIN", "WAREHOUSE_STAFF", "VENDOR")
                                 // Warehouse operational paths can be accessed by both ADMIN and WAREHOUSE_STAFF
                                 .requestMatchers("/api/warehouse/**").hasAnyRole("ADMIN", "WAREHOUSE_STAFF")
 

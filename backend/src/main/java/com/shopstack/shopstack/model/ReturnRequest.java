@@ -45,6 +45,9 @@ public class ReturnRequest {
     @Column(nullable = false)
     private String status;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(name = "request_date", updatable = false)
     private LocalDateTime requestDate;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllVendors, updateVendorStatus, getCustomerCount, getAllCustomers, toggleUserStatus } from '../../api/vendors';
 import { getPendingProducts, approveProduct, searchProducts } from '../../api/products';
 import { getAdminOrders, getAdminDashboardStats, updateOrderStatus } from '../../api/orders';
-import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3, Ticket, DollarSign, Percent } from 'lucide-react';
+import { Shield, Store, Package, CheckCircle, XCircle, Clock, Users, Eye, ImageOff, X, Star, Truck, ShoppingBag, Layers, BarChart3, Ticket, IndianRupee, Percent } from 'lucide-react';
 import DashboardCards from '../../components/admin/DashboardCards';
 import OrderTracker from '../../components/orders/OrderTracker';
 import { Link } from 'react-router-dom';
@@ -110,9 +110,9 @@ export default function AdminDashboard() {
           cards={[
             { icon: Users, label: 'Total Users', value: customerCount, bg: 'bg-accent-primary/10 text-accent-primary' },
             { icon: Store, label: 'Total Vendors', value: vendors.length, bg: 'bg-accent-primary/10 text-accent-primary' },
-            { icon: DollarSign, label: 'Total Sales (GMV)', value: dashboardStats.totalSales ? `₹${Number(dashboardStats.totalSales).toLocaleString()}` : '₹0', bg: 'bg-indigo-500/10 text-indigo-600' },
-            { icon: DollarSign, label: 'Platform Revenue', value: dashboardStats.totalCommission ? `₹${Number(dashboardStats.totalCommission).toLocaleString()}` : '₹0', bg: 'bg-emerald-500/10 text-emerald-600' },
-            { icon: DollarSign, label: 'Vendor Payout', value: dashboardStats.totalPayout ? `₹${Number(dashboardStats.totalPayout).toLocaleString()}` : '₹0', bg: 'bg-violet-500/10 text-violet-600' },
+            { icon: IndianRupee, label: 'Total Sales (GMV)', value: dashboardStats.totalSales ? `₹${Number(dashboardStats.totalSales).toLocaleString()}` : '₹0', bg: 'bg-indigo-500/10 text-indigo-600' },
+            { icon: IndianRupee, label: 'Platform Revenue', value: dashboardStats.totalCommission ? `₹${Number(dashboardStats.totalCommission).toLocaleString()}` : '₹0', bg: 'bg-emerald-500/10 text-emerald-600' },
+            { icon: IndianRupee, label: 'Vendor Payout', value: dashboardStats.totalPayout ? `₹${Number(dashboardStats.totalPayout).toLocaleString()}` : '₹0', bg: 'bg-violet-500/10 text-violet-600' },
             { icon: Truck, label: 'Completed Orders', value: dashboardStats.completedOrders || adminOrders.length, bg: 'bg-accent-secondary/10 text-accent-secondary' },
           ]}
         />
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
         <div className="rounded-2xl border border-glass-border bg-gradient-to-r from-violet-900/10 via-indigo-900/10 to-emerald-900/10 backdrop-blur-md p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-bold uppercase tracking-wider text-accent-primary flex items-center gap-1.5">
-              <DollarSign size={14} /> Commission & Revenue Overview
+              <IndianRupee size={14} /> Commission & Revenue Overview
             </span>
             <h3 className="text-lg font-bold text-text-primary">Platform Financial Health & Settlement</h3>
             <p className="text-xs text-text-secondary">

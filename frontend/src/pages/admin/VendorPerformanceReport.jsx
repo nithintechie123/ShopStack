@@ -7,7 +7,7 @@ import { printElement, downloadCSV } from '../../utils/exportUtils';
 import ReportSkeleton from '../../components/admin/ReportSkeleton';
 import SummaryCard from '../../components/admin/SummaryCard';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { ChevronLeft, Store, DollarSign, Award, Star, AlertTriangle, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Store, IndianRupee, Award, Star, AlertTriangle, TrendingUp } from 'lucide-react';
 
 const filterItems = [
   { label: 'Today', value: 'today' },
@@ -178,9 +178,9 @@ export default function VendorPerformanceReport() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8">
-              <SummaryCard icon={DollarSign} title="Total Sales (GMV)" value={formatCurrency(computed.totalSales)} detail="Gross customer sales" />
-              <SummaryCard icon={DollarSign} title="Commission Deducted" value={formatCurrency(computed.totalCommission)} detail="Platform revenue earned" />
-              <SummaryCard icon={DollarSign} title="Final Payout" value={formatCurrency(computed.totalPayout)} detail="Vendor take-home payout" />
+              <SummaryCard icon={IndianRupee} title="Total Sales (GMV)" value={formatCurrency(computed.totalSales)} detail="Gross customer sales" />
+              <SummaryCard icon={IndianRupee} title="Commission Deducted" value={formatCurrency(computed.totalCommission)} detail="Platform revenue earned" />
+              <SummaryCard icon={IndianRupee} title="Final Payout" value={formatCurrency(computed.totalPayout)} detail="Vendor take-home payout" />
               <SummaryCard icon={Store} title="Active Vendors" value={`${computed.activeVendors} / ${computed.totalVendors}`} detail="Registered stores" />
               <SummaryCard icon={Award} title="Completed Orders" value={computed.rankTable.reduce((s, r) => s + (r.completedOrders || 0), 0)} detail="Fulfillment orders" />
             </div>

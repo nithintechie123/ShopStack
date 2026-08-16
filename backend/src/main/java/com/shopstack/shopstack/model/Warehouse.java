@@ -60,6 +60,10 @@ public class Warehouse {
 
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vendor_id")
+    private VendorProfile vendor;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

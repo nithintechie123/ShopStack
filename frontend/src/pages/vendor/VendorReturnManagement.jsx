@@ -15,7 +15,7 @@ import {
   Package,
   User,
   HelpCircle,
-  DollarSign,
+  IndianRupee,
   ShieldAlert,
   ClipboardList
 } from "lucide-react";
@@ -217,7 +217,7 @@ function VendorReturnManagement() {
                             {status === "PENDING" && <Clock size={10} />}
                             {status === "APPROVED" && <CheckCircle2 size={10} />}
                             {status === "REJECTED" && <XCircle size={10} />}
-                            {status === "REFUND_PROCESSED" && <DollarSign size={10} />}
+                            {status === "REFUND_PROCESSED" && <IndianRupee size={10} />}
                             <span>{status.replace(/_/g, " ")}</span>
                           </span>
                         </td>
@@ -314,6 +314,21 @@ function VendorReturnManagement() {
                   "{activeInspection.description || "No description provided."}"
                 </div>
               </div>
+
+              {/* Uploaded Verification Photo */}
+              {activeInspection.imageUrl && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Uploaded Photo Evidence</span>
+                  <div className="rounded-xl overflow-hidden border border-glass-border bg-bg-tertiary max-h-48 flex items-center justify-center">
+                    <img
+                      src={activeInspection.imageUrl}
+                      alt="Return Request Evidence"
+                      className="max-h-48 w-full object-contain cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                      onClick={() => window.open(activeInspection.imageUrl, '_blank')}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Interactive Checklist */}
               {!showRejectForm && (

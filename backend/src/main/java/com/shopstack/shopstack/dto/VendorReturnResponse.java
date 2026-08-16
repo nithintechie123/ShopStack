@@ -26,5 +26,6 @@ public class VendorReturnResponse {
 
     private LocalDateTime requestDate;
     
+    private String imageUrl;
 
 }

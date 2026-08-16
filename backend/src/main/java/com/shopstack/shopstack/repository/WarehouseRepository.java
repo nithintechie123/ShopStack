@@ -1,5 +1,6 @@
 package com.shopstack.shopstack.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +15,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, UUID> {
     Optional<Warehouse> findByWarehouseCode(String warehouseCode);
 
     boolean existsByWarehouseCode(String warehouseCode);
+
+    List<Warehouse> findByVendorUserId(UUID userId);
 }

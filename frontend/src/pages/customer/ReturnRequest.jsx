@@ -18,6 +18,7 @@ import {
   getOrderById,
   submitReturnRequest,
 } from "../../api/orders";
+import { uploadProductImage } from "../../api/upload";
 
 export default function ReturnRequest() {
   const { id } = useParams();
@@ -69,10 +70,17 @@ export default function ReturnRequest() {
     e.preventDefault();
 
     try {
+      let uploadedUrl = null;
+      if (images.length > 0) {
+        const uploadRes = await uploadProductImage(images[0]);
+        uploadedUrl = uploadRes.data?.imageUrl;
+      }
+
       await submitReturnRequest(id, {
         reason,
         description,
         refundMethod,
+        imageUrl: uploadedUrl,
       });
 
       alert("Return request submitted successfully!");
@@ -255,7 +263,7 @@ export default function ReturnRequest() {
               {/* Dynamic Image Upload Zone */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Upload Product Images (Optional)
+                  Upload Product Photo *
                 </label>
                 <label className="group flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-glass-border hover:border-accent-primary hover:bg-accent-primary/5 py-6 transition duration-300 cursor-pointer">
                   <Upload size={22} className="text-text-muted group-hover:text-accent-primary transition-colors" />
@@ -354,7 +362,7 @@ export default function ReturnRequest() {
               <div className="pt-6 border-t border-glass-border flex flex-col gap-3">
                 <button
                   type="submit"
-                  disabled={!reason || !description}
+                  disabled={!reason || !description || images.length === 0}
                   className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-accent-primary to-indigo-600 hover:from-indigo-600 hover:to-accent-primary text-white font-bold text-sm shadow-md shadow-accent-primary/15 hover:shadow-lg hover:shadow-accent-primary/30 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   Submit Return Request

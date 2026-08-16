@@ -29,6 +29,7 @@ public class ReturnRequestService {
             UUID orderId,
             String reason,
             String description,
+            String imageUrl,
             User user) {
 
         Order order = orderRepository.findById(orderId)
@@ -46,6 +47,7 @@ public class ReturnRequestService {
                 .order(order)
                 .reason(reason)
                 .description(description)
+                .imageUrl(imageUrl)
                 .status("PENDING")
                 .build();
 
@@ -114,6 +116,7 @@ public class ReturnRequestService {
                         .description(request.getDescription())
                         .status(request.getStatus())
                         .requestDate(request.getRequestDate())
+                        .imageUrl(request.getImageUrl())
                         .build();
 
             })

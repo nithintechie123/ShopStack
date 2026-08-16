@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DollarSign, ShoppingCart, Store, LayoutGrid, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { IndianRupee, ShoppingCart, Store, LayoutGrid, Award, ChevronLeft } from 'lucide-react';
 import { getAdminOrders } from '../../api/orders';
 import { getAllVendors } from '../../api/vendors';
 import ReportHeader from '../../components/admin/ReportHeader';
@@ -26,7 +27,7 @@ function computeTrend(current, previous) {
 }
 
 const quickReports = [
-  { icon: DollarSign, title: 'Revenue Analytics', description: 'Track platform revenue across time and categories.', to: '/admin/reports/revenue' },
+  { icon: IndianRupee, title: 'Revenue Analytics', description: 'Track platform revenue across time and categories.', to: '/admin/reports/revenue' },
   { icon: ShoppingCart, title: 'Sales Analytics', description: 'Analyze top-selling items and order trends.', to: '/admin/reports/sales' },
   { icon: Store, title: 'Vendor Performance', description: 'Compare vendor revenue and order performance.', to: '/admin/reports/vendor' },
   { icon: LayoutGrid, title: 'Category Analytics', description: 'Review sales distribution across product categories.', to: '/admin/reports/category' },
@@ -112,11 +113,19 @@ export default function Reports() {
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 relative">
-          <div className="absolute -top-12 -left-12 w-48 h-48 bg-violet-600/5 rounded-full filter blur-3xl" />
-          <div className="absolute -top-6 -right-6 w-32 h-32 bg-indigo-600/5 rounded-full filter blur-2xl" />
-          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Reports & Analytics</h1>
-          <p className="text-sm text-text-muted mt-2">A modern analytics dashboard monitoring platform revenue, order tracking, and seller metrics.</p>
+        <div className="mb-8 relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="absolute -top-12 -left-12 w-48 h-48 bg-violet-600/5 rounded-full filter blur-3xl" />
+            <div className="absolute -top-6 -right-6 w-32 h-32 bg-indigo-600/5 rounded-full filter blur-2xl" />
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Reports & Analytics</h1>
+            <p className="text-sm text-text-muted mt-2">A modern analytics dashboard monitoring platform revenue, order tracking, and seller metrics.</p>
+          </div>
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-2 text-xs font-bold text-violet-700 hover:text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-xl px-4 py-2 border border-violet-100 transition-colors shrink-0 cursor-pointer shadow-sm"
+          >
+            <ChevronLeft size={16} /> Back to Dashboard
+          </Link>
         </div>
 
         <ReportHeader
@@ -146,7 +155,7 @@ export default function Reports() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
-              <SummaryCard icon={DollarSign} title="Total Revenue" value={formatCurrency(summary.totalRevenue)} detail="Sales in the chosen range" trend={summary.revenueTrend} />
+              <SummaryCard icon={IndianRupee} title="Total Revenue" value={formatCurrency(summary.totalRevenue)} detail="Sales in the chosen range" trend={summary.revenueTrend} />
               <SummaryCard icon={ShoppingCart} title="Total Orders" value={summary.totalOrders} detail="Purchases completed" trend={summary.ordersTrend} />
               <SummaryCard icon={LayoutGrid} title="Products Sold" value={summary.productsSold} detail="Total items sold" trend={8} />
               <SummaryCard icon={Store} title="Active Vendors" value={summary.activeVendors} detail="Vendors with orders" trend={4} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAdminOrders } from '../../api/orders';
-import { DollarSign, ShoppingCart, LayoutGrid, Store, ChevronLeft, Award } from 'lucide-react';
+import { IndianRupee, ShoppingCart, LayoutGrid, Store, ChevronLeft, Award } from 'lucide-react';
 import ReportHeader from '../../components/admin/ReportHeader';
 import { printElement, downloadCSV } from '../../utils/exportUtils';
 import ReportSkeleton from '../../components/admin/ReportSkeleton';
@@ -198,7 +198,7 @@ function RevenueReportContent() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
-              <SummaryCard icon={DollarSign} title="Total Revenue" value={formatCurrency(stats.totalRevenue)} detail="Platform sales revenue" trend={stats.revenueTrend} />
+              <SummaryCard icon={IndianRupee} title="Total Revenue" value={formatCurrency(stats.totalRevenue)} detail="Platform sales revenue" trend={stats.revenueTrend} />
               <SummaryCard icon={ShoppingCart} title="Total Orders" value={stats.totalOrders} detail="Purchases completed" trend={stats.ordersTrend} />
               <SummaryCard icon={LayoutGrid} title="Products Sold" value={stats.productsSold} detail="Total items sold" trend={8} />
               <SummaryCard icon={Store} title="Active Vendors" value={stats.activeVendors} detail="Vendors making sales" trend={4} />
