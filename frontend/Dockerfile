@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependencies (cached step)
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Set up build arguments for environment variables
 ARG VITE_API_BASE_URL
