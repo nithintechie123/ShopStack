@@ -130,6 +130,9 @@ public class OrderService {
             billing = shipping;
         }
 
+        String initialPaymentMethod=request.getPaymentMethod()!=null?request.getPaymentMethod():"COD";
+        String initialPaymentStatus="COD".equalsIgnoreCase(initialPaymentMethod)?"PENDING":"PAID";
+
         Order order = Order.builder()
                 .user(user)
                 .subtotal(subtotal)
@@ -137,8 +140,8 @@ public class OrderService {
                 .finalAmount(finalAmount)
                 .shippingAddress(shipping)
                 .billingAddress(billing)
-                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD")
-                .paymentStatus("PAID")
+                .paymentMethod(initialPaymentMethod)
+                .paymentStatus(initialPaymentStatus)
                 .trackingStatus("PLACED")
                 .transactionId(transactionId)
                 .build();
@@ -271,10 +274,11 @@ public class OrderService {
         }
 
 
-
-
-
         order.setTrackingStatus(uppercaseStatus);
+
+        if("DELIVERED".equals(uppercaseStatus) && "PENDING".equalsIgnoreCase(order.getPaymentStatus())){
+            order.setPaymentStatus("PAID");
+        }
 
         return orderRepository.save(order);
     }
