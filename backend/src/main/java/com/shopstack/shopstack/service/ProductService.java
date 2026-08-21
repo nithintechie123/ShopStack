@@ -21,17 +21,20 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductReviewRepository reviewRepository;
     private final ProductImageRepository imageRepository;
+    private final OrderRepository orderRepository;
 
     public ProductService(ProductRepository productRepository,
                           VendorProfileRepository vendorProfileRepository,
                           CategoryRepository categoryRepository,
                           ProductReviewRepository reviewRepository,
-                          ProductImageRepository imageRepository) {
+                          ProductImageRepository imageRepository,
+                          OrderRepository orderRepository) {
         this.productRepository = productRepository;
         this.vendorProfileRepository = vendorProfileRepository;
         this.categoryRepository = categoryRepository;
         this.reviewRepository = reviewRepository;
         this.imageRepository = imageRepository;
+        this.orderRepository = orderRepository;
     }
 
     @Transactional
@@ -215,6 +218,11 @@ public class ProductService {
 
         if (rating < 1 || rating > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        boolean hasPurchased = orderRepository.hasUserPurchasedAndReceivedProduct(user.getId(), productId);
+        if (!hasPurchased) {
+            throw new IllegalArgumentException("You can only review products you have purchased and received.");
         }
 
         ProductReview review = ProductReview.builder()

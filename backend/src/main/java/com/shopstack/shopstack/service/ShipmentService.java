@@ -93,7 +93,7 @@ public class ShipmentService {
             case DELIVERED:
                 order.setTrackingStatus("DELIVERED");
                 shipment.setDeliveredAt(java.time.LocalDateTime.now());
-                if("PENDING".equalsIgnoreCase(order.getPaymentMethod())){
+                if("PENDING".equalsIgnoreCase(order.getPaymentStatus())){
                     order.setPaymentStatus("PAID");
                 }
                 break;

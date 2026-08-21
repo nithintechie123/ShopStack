@@ -21,4 +21,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     //Added for admin reports
     List<Order> findByTrackingStatusNot(String trackingStatus);
     long countByTrackingStatus(String trackingStatus);
+
+    @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.items i WHERE o.user.id = :userId AND i.product.id = :productId AND o.trackingStatus = 'DELIVERED'")
+    boolean hasUserPurchasedAndReceivedProduct(@Param("userId") UUID userId, @Param("productId") UUID productId);
 }
