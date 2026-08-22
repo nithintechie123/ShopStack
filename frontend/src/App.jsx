@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { ProtectedRoute, RoleRoute, GuestRoute } from './components/guards/ProtectedRoute';
@@ -43,20 +44,24 @@ import { Unauthorized, NotFound } from './pages/misc/Fallback';
 import './index.css';
 
 function Layout({ children }) {
+  const location = useLocation();
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main>{children}</main>
-    </>
+      <main key={location.pathname} className="flex-1 animate-page-enter">
+        {children}
+      </main>
+    </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <BrowserRouter>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Layout><Home /></Layout>} />
@@ -142,8 +147,9 @@ export default function App() {
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
           </BrowserRouter>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

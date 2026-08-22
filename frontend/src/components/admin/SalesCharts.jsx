@@ -20,10 +20,10 @@ function CustomChartTooltip({ active, payload, label, prefix = '' }) {
   if (!active || !payload || !payload.length) return null;
   const val = payload[0].value;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-xl text-xs transition-all duration-200">
+    <div className="rounded-2xl border border-glass-border bg-bg-secondary/95 backdrop-blur-md px-4 py-3 shadow-xl text-xs transition-all duration-200">
       <div className="font-semibold text-text-muted mb-1">{label}</div>
       <div className="font-bold text-text-primary text-sm flex items-center gap-1">
-        <span className="text-violet-600 font-extrabold">{prefix}</span>
+        <span className="text-violet-600 dark:text-violet-400 font-extrabold">{prefix}</span>
         <span>{Number(val).toLocaleString()} Orders</span>
       </div>
     </div>
@@ -152,10 +152,10 @@ function CustomTooltip({ active, payload, total }) {
   const p = payload[0].payload;
   const percent = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0';
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-xl text-xs">
+    <div className="rounded-2xl border border-glass-border bg-bg-secondary/95 backdrop-blur-md px-4 py-3 shadow-xl text-xs">
       <div className="font-semibold text-text-primary mb-1">{p.name}</div>
       <div className="text-text-muted flex flex-col gap-0.5">
-        <div>Revenue: <span className="font-bold text-violet-600">₹{Number(p.value).toLocaleString()}</span></div>
+        <div>Revenue: <span className="font-bold text-violet-600 dark:text-violet-400">₹{Number(p.value).toLocaleString()}</span></div>
         <div>Contribution: <span className="font-semibold text-text-primary">{percent}%</span></div>
       </div>
     </div>
