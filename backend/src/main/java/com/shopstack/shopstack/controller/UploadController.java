@@ -1,5 +1,8 @@
 package com.shopstack.shopstack.controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -7,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -15,13 +17,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @CrossOrigin
 public class UploadController {
 
     private final Path uploadDir = Paths.get("uploads");
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     public UploadController() {
         try {
@@ -45,19 +49,12 @@ public class UploadController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed"));
             }
 
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            if (cloudinary == null || cloudinary.config.cloudName == null || cloudinary.config.cloudName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cloudinary credentials not configured. Please add CLOUDINARY_URL to your .env file."));
             }
 
-            String newFilename = UUID.randomUUID().toString() + extension;
-            Path destination = uploadDir.resolve(newFilename);
-            Files.copy(file.getInputStream(), destination);
-            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/api/upload/files/")
-                .path(newFilename)
-                .toUriString();
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            String fileUrl = (String) uploadResult.get("secure_url");
 
             return ResponseEntity.ok(Map.of("imageUrl", fileUrl));
 
