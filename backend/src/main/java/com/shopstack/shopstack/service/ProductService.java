@@ -86,6 +86,15 @@ public class ProductService {
         existing.setDescription(updatedProduct.getDescription());
         existing.setPrice(updatedProduct.getPrice());
         existing.setStockQuantity(updatedProduct.getStockQuantity());
+
+        // Update images list (with orphanRemoval = true, this will replace old image database records)
+        if (updatedProduct.getImages() != null) {
+            existing.getImages().clear();
+            for (ProductImage img : updatedProduct.getImages()) {
+                img.setProduct(existing);
+                existing.getImages().add(img);
+            }
+        }
         
         // Reset approval if product was modified (standard marketplace safety)
         if (existing.getStatus() == ProductStatus.APPROVED) {

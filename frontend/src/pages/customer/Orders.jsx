@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Package, ChevronRight, ShoppingBag, CheckCircle, Truck, AlertCircle, Eye, RefreshCw, RotateCcw } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getMyOrders } from '../../api/orders';
 import OrderTracker from '../../components/orders/OrderTracker';
 import OrderSuccessModal from '../../components/orders/OrderSuccessModal';
@@ -31,9 +31,17 @@ export default function Orders() {
   const [activeTab, setActiveTab] = useState('ALL');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const isJustPlaced = location.state?.orderSuccess;
-  const [showSuccessModal, setShowSuccessModal] = useState(Boolean(isJustPlaced));
+  const [isJustPlaced, setIsJustPlaced] = useState(() => Boolean(location.state?.orderSuccess));
+  const [showSuccessModal, setShowSuccessModal] = useState(() => Boolean(location.state?.orderSuccess));
+
+  useEffect(() => {
+    if (location.state?.orderSuccess) {
+      // Clear history state so refresh doesn't trigger the success alert/modal again
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const fetchOrders = () => {
     setLoading(true);

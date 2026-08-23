@@ -542,7 +542,7 @@ export default function VendorDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              {(p.status === 'DRAFT' || p.status === 'REJECTED') && (
+                              {(p.status === 'DRAFT' || p.status === 'REJECTED' || p.status === 'APPROVED') && (
                                 <button
                                   className="inline-flex items-center gap-1.5 bg-accent-primary hover:bg-accent-primary-hover text-white text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer shadow-sm shadow-accent-primary/10 hover:shadow-accent-primary/20"
                                   onClick={() => handleEdit(p)}
